@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>dotnet.openapi.generator</RootNamespace>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+		<openapi-generator-version>$(TargetFrameworkVersion)</openapi-generator-version>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(openapi-generator-version)' == ''">
+		<openapi-generator-version>7.0</openapi-generator-version>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<TargetFramework>net$(openapi-generator-version)</TargetFramework>
+		<Version>$(openapi-generator-version).0-preview.6</Version>
+		<Authors>Steven Thuriot</Authors>
+		<Copyright>$(Authors)</Copyright>
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>openapi-generator</ToolCommandName>
+		<AssemblyName>$(ToolCommandName)</AssemblyName>
+		<PackageId>dotnet-$(ToolCommandName)</PackageId>
+		<Product>OpenApi Generator</Product>
+		<Title>$(Product)</Title>
+		<Description>Generate C# code based on swagger documents</Description>
+		<RepositoryUrl>https://github.com/StevenThuriot/dotnet-openapi-generator</RepositoryUrl>
+		<PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+		<PackageTags>swagger;generation;generator;openapi;csharp</PackageTags>
+		<PackageIcon>openapi.png</PackageIcon>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+    	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommandLineParser" Version="2.9.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(openapi-generator-version).0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="$(openapi-generator-version).0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\openapi.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\readme.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	  <None Update="Regexes.tt">
+	    <Generator>TextTemplatingFileGenerator</Generator>
+	    <LastGenOutput>Regexes.cs</LastGenOutput>
+	  </None>
+	  <Compile Update="Regexes.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Regexes.tt</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+</Project>

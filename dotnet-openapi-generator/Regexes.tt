@@ -1,0 +1,51 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<#
+
+const string pattern = @"[`\[\], \+\/\\\{\}\-";
+
+Dictionary<string, string> patterns = new()
+{
+    ["SafeString"] = pattern + "]",
+    ["SafeStringWithoutDots"] = pattern + @"\.]",
+    ["MultiUnderscore"] = "_{2,}",
+    ["FullnameType"] = @"^(?<genericType>.+)`\d+(?<typeinfo>\[\[(?<type>.+?), .+?, Version=\d+.\d+.\d+.\d+, Culture=.+?, PublicKeyToken=.+?\]\])$",
+    ["FindActualComponent"] = @"(System\.Collections\.Generic\.List<|System\.Collections\.Generic\.Dictionary<string, )(?<actualComponent>\w+)>",
+    ["Version"] = @"^\W*(v(ersion)?)?\W*(?<major>\d+)(\.(?<minor>\d+)(\.(?<build>\d+)(\.(?<private>\d+))?)?)?\W*$"
+};
+
+#>
+using System.Text.RegularExpressions;
+
+namespace dotnet.openapi.generator;
+
+internal static partial class Regexes
+{
+<# foreach (var item in patterns) {#>
+    [GeneratedRegex(@"<#= item.Value #>", RegexOptions.Compiled, 1000)] public static partial Regex <#= item.Key #>();
+<# } #>
+}
+
+#if !NET7_0_OR_GREATER
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+internal sealed class GeneratedRegexAttribute : Attribute
+{
+#pragma warning disable RCS1163 // Unused parameter.
+    public GeneratedRegexAttribute(string pattern, RegexOptions options, int matchTimeoutMilliseconds)
+#pragma warning restore RCS1163 // Unused parameter.
+    {
+    }
+}
+
+static partial class Regexes
+{
+<# foreach (var item in patterns) {#>
+    private static readonly Regex s_<#= item.Key #> = new(@"<#= item.Value #>", RegexOptions.Compiled, TimeSpan.FromMilliseconds(1000));
+    public static partial Regex <#= item.Key #>() => s_<#= item.Key #>;
+<# } #>
+}
+#endif
