@@ -16,13 +16,13 @@
 
 	<PropertyGroup>
 		<TargetFramework>net$(openapi-generator-version)</TargetFramework>
-		<Version>$(openapi-generator-version).0-preview.6</Version>
+		<Version>$(openapi-generator-version).0-preview.7</Version>
 		<Authors>Steven Thuriot</Authors>
 		<Copyright>$(Authors)</Copyright>
 		<PackAsTool>true</PackAsTool>
-		<ToolCommandName>openapi-generator</ToolCommandName>
+		<ToolCommandName>dotnet-openapi-generator</ToolCommandName>
 		<AssemblyName>$(ToolCommandName)</AssemblyName>
-		<PackageId>dotnet-$(ToolCommandName)</PackageId>
+		<PackageId>$(ToolCommandName)</PackageId>
 		<Product>OpenApi Generator</Product>
 		<Title>$(Product)</Title>
 		<Description>Generate C# code based on swagger documents</Description>
