@@ -5,7 +5,7 @@ namespace dotnet.openapi.generator;
 
 internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 {
-    public async Task<IEnumerable<string>> Generate(string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType? oAuthType, bool includeJsonSourceGenerators, CancellationToken token)
+    public async Task<IEnumerable<string>> Generate(string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType oAuthType, bool includeJsonSourceGenerators, CancellationToken token)
     {
         path = Path.Combine(path, "Clients");
 
@@ -25,7 +25,7 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 
         HashSet<string> usedComponents = new();
 
-        await GenerateClientOptions(path, @namespace, modifier, oAuthType.HasValue, includeJsonSourceGenerators, token);
+        await GenerateClientOptions(path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, token);
         await GenerateQueryBuilder(path, @namespace, stringBuilderPoolSize, token);
         await GenerateClients(path, @namespace, modifier, excludeObsolete, includeInterfaces, clientModifier, clients, usedComponents, token);
         await GenerateRegistrations(path, @namespace, modifier, includeInterfaces, clients, oAuthType, token);
@@ -68,7 +68,7 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
         return clients;
     }
 
-    private static async Task GenerateRegistrations(string path, string @namespace, string modifier, bool includeInterfaces, Dictionary<string, List<KeyValuePair<string, SwaggerPath>>> clients, OAuthType? oAuthType, CancellationToken token)
+    private static async Task GenerateRegistrations(string path, string @namespace, string modifier, bool includeInterfaces, Dictionary<string, List<KeyValuePair<string, SwaggerPath>>> clients, OAuthType oAuthType, CancellationToken token)
     {
         Logger.LogInformational("Generating Registrations");
 
@@ -92,7 +92,7 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
         string registrationClassAdditionals = "";
         string additionalRegistrations = "";
 
-        if (oAuthType.HasValue)
+        if (oAuthType is not OAuthType.None)
         {
             additionalRegistrations = $@"
 
