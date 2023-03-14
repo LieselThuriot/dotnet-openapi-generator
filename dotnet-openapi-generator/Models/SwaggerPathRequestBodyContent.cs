@@ -8,6 +8,9 @@ internal class SwaggerPathRequestBodyContent
     [System.Text.Json.Serialization.JsonPropertyName("multipart/form-data")]
     public SwaggerPathRequestBodyContentMultiform? multipartformdata { get; set; }
 
+    [System.Text.Json.Serialization.JsonPropertyName("application/octet-stream")]
+    public SwaggerPathRequestBodyContentOctetStream? octetstream { get; set; }
+
     public string GetBody()
     {
         if (multipartformdata is not null)
@@ -23,6 +26,11 @@ internal class SwaggerPathRequestBodyContent
             return result;
         }
 
+        if (octetstream is not null)
+        {
+            return (octetstream.schema.ResolveType() ?? "object") + " body, ";
+        }
+
         if (applicationjson is not null)
         {
             return (applicationjson.schema.ResolveType() ?? "object") + " body, ";
@@ -33,14 +41,19 @@ internal class SwaggerPathRequestBodyContent
 
     public string ResolveType()
     {
-        if (applicationjson is not null)
-        {
-            return applicationjson.schema.ResolveType() ?? "object";
-        }
-
         if (multipartformdata is not null)
         {
             return typeof(Stream).FullName!;
+        }
+
+        if (octetstream is not null)
+        {
+            return octetstream.schema.ResolveType() ?? "object";
+        }
+
+        if (applicationjson is not null)
+        {
+            return applicationjson.schema.ResolveType() ?? "object";
         }
 
         return "";

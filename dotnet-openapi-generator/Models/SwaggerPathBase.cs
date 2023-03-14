@@ -1,4 +1,6 @@
-﻿namespace dotnet.openapi.generator;
+﻿using Newtonsoft.Json.Linq;
+
+namespace dotnet.openapi.generator;
 
 internal class SwaggerPathGet : SwaggerPathBase { }
 internal class SwaggerPathPost : SwaggerPathBase { }
@@ -224,7 +226,7 @@ internal abstract class SwaggerPathBase
         string? methodSummary = summary?.Replace('\n', ' ').Replace('\r', ' ');
         if (string.IsNullOrWhiteSpace(methodSummary))
         {
-            methodSummary = "HTTP " + operation + " on /" + apiPath;
+            methodSummary = "HTTP " + operation + " on /" + apiPath.Replace("{__my_queryBuilder}", "");
         }
 
         var result = $@"
@@ -260,7 +262,7 @@ internal abstract class SwaggerPathBase
     {{
         var __result = await {name}WithHttpInfoAsync({passThroughParams}token);
         await __my_options.InterceptResponse(__result, token);
-        return await __my_options.DeSerializeContent{responseType}(__result, token);
+        return await {(responseType == "<System.IO.Stream?>" ? "__result.Content.ReadAsStreamAsync(token)" : $"__my_options.DeSerializeContent{responseType}(__result, token)")};
     }}
 ");
             }
