@@ -23,8 +23,10 @@ internal class SwaggerSchemaProperty
 
     public string GetBody(string name)
     {
-        var builder = new StringBuilder("public ");
+        StringBuilder builder = new("public ");
+        
         builder.Append(ResolveType());
+
         if (nullable)
         {
             builder.Append('?');

@@ -8,7 +8,7 @@ internal class SwaggerSchemaEnum : List<object>
     {
         HashSet<string> unique = new(Count);
 
-        var builder = new StringBuilder();
+        StringBuilder builder = new();
 
         var flagCount = 0;
         for (int i = 0; i < Count; i++)

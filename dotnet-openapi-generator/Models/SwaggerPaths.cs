@@ -28,39 +28,37 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
         await GenerateClientOptions(path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, token);
         await GenerateQueryBuilder(path, @namespace, stringBuilderPoolSize, token);
         await GenerateClients(path, @namespace, modifier, excludeObsolete, includeInterfaces, clientModifier, clients, usedComponents, token);
-        await GenerateRegistrations(path, @namespace, modifier, includeInterfaces, clients, oAuthType, token);
+        await GenerateRegistrations(path, @namespace, modifier, includeInterfaces, clients.Keys, oAuthType, token);
 
         return usedComponents;
     }
 
-    private Dictionary<string, List<KeyValuePair<string, SwaggerPath>>> GetClients(bool excludeObsolete, Regex? filter)
+    private Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> GetClients(bool excludeObsolete, Regex? filter)
     {
-        var clients = new Dictionary<string, List<KeyValuePair<string, SwaggerPath>>>(Count);
+        Dictionary<string, List<(string, SwaggerPathBase)>> clients = new(Count);
 
         foreach (var item in this)
         {
-            if (!item.Value.HasMembers(excludeObsolete))
+            foreach (var member in item.Value.IterateMembers().Where(x => x.tags is not null && (!excludeObsolete || !x.deprecated)))
             {
-                continue;
-            }
-
-            foreach (var tag in item.Value.GetTags())
-            {
-                if (filter?.IsMatch(tag) == false)
+                foreach (var tag in member.tags)
                 {
-                    continue;
-                }
-
-                if (clients.TryGetValue(tag, out var list))
-                {
-                    list.Add(item);
-                }
-                else
-                {
-                    clients[tag] = new()
+                    if (filter?.IsMatch(tag) == false)
                     {
-                        item
-                    };
+                        continue;
+                    }
+
+                    if (clients.TryGetValue(tag, out var list))
+                    {
+                        list.Add((item.Key, member));
+                    }
+                    else
+                    {
+                        clients[tag] = new()
+                        {
+                            (item.Key, member)
+                        };
+                    }
                 }
             }
         }
@@ -68,12 +66,12 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
         return clients;
     }
 
-    private static async Task GenerateRegistrations(string path, string @namespace, string modifier, bool includeInterfaces, Dictionary<string, List<KeyValuePair<string, SwaggerPath>>> clients, OAuthType oAuthType, CancellationToken token)
+    private static async Task GenerateRegistrations(string path, string @namespace, string modifier, bool includeInterfaces, IEnumerable<string> clients, OAuthType oAuthType, CancellationToken token)
     {
         Logger.LogInformational("Generating Registrations");
 
-        var addHttpClientRegistrations = clients.OrderBy(x => x.Key)
-                                                .Select(x => $"        Register<{GetClientGeneric(x.Key)}>();")
+        var addHttpClientRegistrations = clients.OrderBy(x => x)
+                                                .Select(x => $"        Register<{GetClientGeneric(x)}>();")
                                                 .Aggregate((current, next) => current + Environment.NewLine + next);
 
         string GetClientGeneric(string name)
@@ -327,7 +325,7 @@ namespace {@namespace};
 ", token);
     }
 
-    private static async Task GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, Dictionary<string, List<KeyValuePair<string, SwaggerPath>>> clients, HashSet<string> usedComponents, CancellationToken token)
+    private static async Task GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, HashSet<string> usedComponents, CancellationToken token)
     {
         Logger.LogInformational("Generating Clients");
 
@@ -381,14 +379,14 @@ namespace {@namespace}.Clients;
 
             string GetBody()
             {
-                var builder = new StringBuilder();
+                StringBuilder builder = new();
                 HashSet<string> methodNames = new();
 
                 foreach (var item in client.Value)
                 {
-                    var body = item.Value.GetBody(item.Key, methodNames, excludeObsolete);
+                    var body = item.path.GetBody(item.apiPath, methodNames, excludeObsolete);
 
-                    foreach (var componennt in item.Value.GetComponents())
+                    foreach (var componennt in item.path.GetComponents())
                     {
                         usedComponents.Add(componennt);
                     }
@@ -401,14 +399,14 @@ namespace {@namespace}.Clients;
 
             string GetBodySignatures()
             {
-                var builder = new StringBuilder();
+                StringBuilder builder = new();
                 HashSet<string> methodNames = new();
 
                 foreach (var item in client.Value)
                 {
-                    var body = item.Value.GetBodySignature(item.Key, methodNames, excludeObsolete);
+                    var body = item.path.GetBodySignature(item.apiPath, methodNames, excludeObsolete);
 
-                    foreach (var componennt in item.Value.GetComponents())
+                    foreach (var componennt in item.path.GetComponents())
                     {
                         usedComponents.Add(componennt);
                     }

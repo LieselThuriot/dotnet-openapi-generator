@@ -6,7 +6,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
 {
     public string GetBody(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas)
     {
-        var builder = new StringBuilder();
+        StringBuilder builder = new();
 
         foreach (var item in this)
         {

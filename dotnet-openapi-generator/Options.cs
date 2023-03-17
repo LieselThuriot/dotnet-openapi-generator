@@ -141,7 +141,7 @@ public class Options
     {
         Logger.LogVerbose("Resolving online document");
 
-        using var client = new HttpClient();
+        using HttpClient client = new();
         using var result = await client.GetAsync(documentLocation);
 
         result.EnsureSuccessStatusCode();

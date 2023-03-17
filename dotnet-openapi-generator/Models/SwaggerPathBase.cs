@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-
-namespace dotnet.openapi.generator;
+﻿namespace dotnet.openapi.generator;
 
 internal class SwaggerPathGet : SwaggerPathBase { }
 internal class SwaggerPathPost : SwaggerPathBase { }
@@ -18,7 +16,10 @@ internal abstract class SwaggerPathBase
 
     public string? operationId { get; set; }
 
-    public string GetBody(string apiPath, HashSet<string> methodNames, bool excludeObsolete, bool signaturesOnly)
+    public string GetBodySignature(string apiPath, HashSet<string> methodNames, bool excludeObsolete) => GetBodyInternal(apiPath, methodNames, excludeObsolete, true);
+    public string GetBody(string apiPath, HashSet<string> methodNames, bool excludeObsolete) => GetBodyInternal(apiPath, methodNames, excludeObsolete, false);
+
+    private string GetBodyInternal(string apiPath, HashSet<string> methodNames, bool excludeObsolete, bool signaturesOnly)
     {
         if (excludeObsolete && deprecated)
         {
