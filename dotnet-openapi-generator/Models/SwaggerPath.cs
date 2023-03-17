@@ -47,7 +47,7 @@ internal class SwaggerPath
 
     public IEnumerable<string> GetTags()
     {
-        return IterateMembers().SelectMany(x => x.tags.Take(1));
+        return IterateMembers().SelectMany(x => x.tags).Distinct();
     }
 
     public IEnumerable<string> GetComponents()

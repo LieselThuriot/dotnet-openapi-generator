@@ -32,7 +32,7 @@ public class Options
     [Option('s', "tree-shake", Required = false, HelpText = "Skip generating unused models", Default = false)]
     public bool TreeShaking { get; set; }
 
-    [Option("json-constructor-attribute", Required = false, HelpText = "Json Constructor Attribute. Constructors are generated when the class contains required properties.", Default = "System.Text.Json.Serialization.JsonConstructor")]
+    [Option("json-constructor-attribute", Required = false, HelpText = "Json Constructor Attribute. Constructors are generated when the class contains required properties", Default = "System.Text.Json.Serialization.JsonConstructor")]
     public string? JsonConstructorAttribute { get; set; }
 
 #if NET7_0_OR_GREATER
@@ -40,11 +40,14 @@ public class Options
 #endif
     public bool IncludeJsonSourceGenerators { get; set; }
 
-    [Option("stringbuilder-pool-size", Required = false, HelpText = "StringBuilder pool size for building query params. If 0, a simple string concat is used instead.", Default = 50)]
+    [Option("stringbuilder-pool-size", Required = false, HelpText = "StringBuilder pool size for building query params. If 0, a simple string concat is used instead", Default = 50)]
     public int StringBuilderPoolSize { get; set; }
 
     [Option("oauth-type", Required = false, HelpText = "Includes an OAuth Client. Can be ClientCredentials, TokenExchange or CachedTokenExchange", Default = OAuthType.None)]
     public OAuthType OAuthType { get; set; }
+
+    [Option("oauth-client-credential-style", Required = false, HelpText = "When including an OAuth Client, we can either pass values in the body or as a basic auth header. Can be PostBody or AuthorizationHeader", Default = ClientCredentialStyle.PostBody)]
+    public ClientCredentialStyle ClientCredentialStyle { get; set; }
 
     [Option('i', "interfaces", Required = false, HelpText = "Generate interfaces for the clients", Default = false)]
     public bool IncludeInterfaces { get; set; }
@@ -55,7 +58,7 @@ public class Options
     [Option('o', "no-obsolete", Required = false, HelpText = "Do not generate obsolete endpoints", Default = false)]
     public bool ExcludeObsolete { get; set; }
 
-    [Option('a', "additional-document", HelpText = "Location of additional swagger document, used to merge into the main one. Can be both an http location or a local one and can be used multiple times.")]
+    [Option('a', "additional-document", HelpText = "Location of additional swagger document, used to merge into the main one. Can be both an http location or a local one and can be used multiple times")]
     public IList<string>? AdditionalDocumentLocations { get; set; }
 
     [Option('v', "verbose", Required = false, HelpText = "Verbose logging", Default = false)]

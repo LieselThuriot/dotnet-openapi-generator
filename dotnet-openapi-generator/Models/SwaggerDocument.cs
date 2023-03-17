@@ -276,7 +276,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
             ClientId = options.ClientId,
             ClientSecret = options.ClientSecret,
             Address = discoveryDocumentResponse.TokenEndpoint,
-            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.PostBody
+            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle}
         }});
 
         var response = await tokenClient.RequestClientCredentialsTokenAsync(options.Scopes, cancellationToken: cancellationToken);
@@ -311,7 +311,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
             Address = discoveryDocumentResponse.TokenEndpoint,
             ClientId = _tokenOptions.ClientId,
             ClientSecret = _tokenOptions.ClientSecret,
-            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.PostBody,
+            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle}
             Parameters = new()
             {{
                 {{ IdentityModel.OidcConstants.TokenRequest.SubjectTokenType, IdentityModel.OidcConstants.TokenTypeIdentifiers.AccessToken }},

@@ -7,3 +7,9 @@ public enum OAuthType
     TokenExchange,
     CachedTokenExchange
 }
+
+public enum ClientCredentialStyle
+{
+    AuthorizationHeader,
+    PostBody
+};
