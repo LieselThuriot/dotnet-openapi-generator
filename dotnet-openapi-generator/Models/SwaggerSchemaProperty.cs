@@ -3,12 +3,6 @@ using System.Text.Json;
 
 namespace dotnet.openapi.generator;
 
-internal class SwaggerSchemaPropertyAdditionalProperties
-{
-    public string? type { get; set; }
-    public bool nullable { get; set; }
-}
-
 internal class SwaggerSchemaProperty
 {
     [System.Text.Json.Serialization.JsonPropertyName("$ref")]
@@ -21,10 +15,15 @@ internal class SwaggerSchemaProperty
     public SwaggerSchemaPropertyAdditionalProperties? additionalProperties { get; set; }
     public System.Text.Json.JsonElement? items { get; set; }
 
-    public string GetBody(string name)
+    public string GetBody(string name, bool supportRequiredProperties)
     {
         StringBuilder builder = new("public ");
-        
+
+        if (supportRequiredProperties && (!nullable || required.GetValueOrDefault()))
+        {
+            builder.Append("required ");
+        }
+
         builder.Append(ResolveType());
 
         if (nullable)

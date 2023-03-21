@@ -4,13 +4,13 @@ namespace dotnet.openapi.generator;
 
 internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaProperty>
 {
-    public string GetBody(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
     {
         StringBuilder builder = new();
 
         foreach (var item in this)
         {
-            builder.Append('\t').AppendLine(item.Value.GetBody(item.Key));
+            builder.Append('\t').AppendLine(item.Value.GetBody(item.Key, supportRequiredProperties));
         }
 
         builder.AppendLine()

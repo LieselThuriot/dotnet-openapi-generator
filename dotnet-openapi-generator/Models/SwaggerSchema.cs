@@ -48,7 +48,7 @@ internal class SwaggerSchema
         return true;
     }
 
-    public string? GetCtor(string name, string? jsonConstructorAttribute, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    public string? GetCtor(string name, string? jsonConstructorAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
     {
         if (properties is null)
         {
@@ -81,10 +81,22 @@ internal class SwaggerSchema
         var parameters = baseProperties.Union(requiredProperties).Select(x => x.value.ResolveType() + " " + x.key);
         var assignements = requiredProperties.Select(x => x.key[0..1].ToUpperInvariant() + x.key[1..] + " = " + x.key + ";");
 
-        return $@"
-    {(string.IsNullOrEmpty(jsonConstructorAttribute) ? "" : "[" + jsonConstructorAttribute + "] ")}public {name}() {{ }}
+        var requiredCtorAttributes = "";
+        var shouldOmitDefaultCtor = string.IsNullOrWhiteSpace(jsonConstructorAttribute);
 
-    public {name}({string.Join(", ", parameters)}){(baseProperties.Count == 0 ? "" : " : base(" + string.Join(", ", baseProperties.Select(x => x.key)) + ")")}
+        jsonConstructorAttribute = "[" + jsonConstructorAttribute + "] ";
+
+        if (supportRequiredProperties)
+        {
+            requiredCtorAttributes = "[System.Diagnostics.CodeAnalysis.SetsRequiredMembers] " + jsonConstructorAttribute;
+            jsonConstructorAttribute = "";
+            shouldOmitDefaultCtor = true;
+        }
+
+        return $@"
+    {(shouldOmitDefaultCtor ? "" : jsonConstructorAttribute)}public {name}() {{ }}
+
+    {requiredCtorAttributes}public {name}({string.Join(", ", parameters)}){(baseProperties.Count == 0 ? "" : " : base(" + string.Join(", ", baseProperties.Select(x => x.key)) + ")")}
     {{
 {string.Join(Environment.NewLine, assignements.Select(x => "        " + x))}
     }}
@@ -124,12 +136,12 @@ internal class SwaggerSchema
         return "";
     }
 
-    public string? GetBody(IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    public string? GetBody(bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
     {
-        return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, schemas);
+        return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas);
     }
 
-    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
+    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
     {
         name = name.AsSafeString();
         var fileName = Path.Combine(path, name + ".cs");
@@ -142,8 +154,8 @@ internal class SwaggerSchema
     : FlaggedEnum is not null
         ? "[System.Flags]" + Environment.NewLine
         : "")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
-{{{GetCtor(name, jsonConstructorAttribute, schemas)}
-{GetBody(schemas)}
+{{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}
+{GetBody(supportRequiredProperties, schemas)}
 }}
 ";
         return File.WriteAllTextAsync(fileName, template, token);

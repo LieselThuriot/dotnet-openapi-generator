@@ -4,7 +4,7 @@ internal class SwaggerComponents
 {
     public Dictionary<string, SwaggerSchema> schemas { get; set; } = default!;
 
-    public async Task Generate(string path, string @namespace, string modifier, IEnumerable<string> usedComponents, bool treeShaking, string? jsonConstructorAttribute, bool includeJsonSourceGenerators, CancellationToken token)
+    public async Task Generate(string path, string @namespace, string modifier, string clientModifierValue, IEnumerable<string> usedComponents, bool treeShaking, string? jsonConstructorAttribute, bool includeJsonSourceGenerators, bool supportRequiredProperties, CancellationToken token)
     {
         path = Path.Combine(path, "Models");
 
@@ -30,7 +30,7 @@ internal class SwaggerComponents
         foreach (var schema in schemasToGenerate)
         {
             Logger.LogStatus(++i, schemasToGenerate.Count, schema.Key);
-            await schema.Value.Generate(path, @namespace, modifier, schema.Key, jsonConstructorAttribute, schemasToGenerate, token);
+            await schema.Value.Generate(path, @namespace, modifier, schema.Key, jsonConstructorAttribute, supportRequiredProperties, schemasToGenerate, token);
         }
 
         Logger.BlankLine();
@@ -54,7 +54,7 @@ namespace {@namespace}.Clients;
 
 [System.Text.Json.Serialization.JsonSourceGenerationOptions(DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull, PropertyNamingPolicy = System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase)]
 {string.Join(Environment.NewLine, attributes)}
-public sealed partial class {className}JsonSerializerContext : System.Text.Json.Serialization.JsonSerializerContext
+{clientModifierValue} sealed partial class {className}JsonSerializerContext : System.Text.Json.Serialization.JsonSerializerContext
 {{
     static {className}JsonSerializerContext()
     {{

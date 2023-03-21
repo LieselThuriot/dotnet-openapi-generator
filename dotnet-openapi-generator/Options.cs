@@ -40,6 +40,11 @@ public class Options
 #endif
     public bool IncludeJsonSourceGenerators { get; set; }
 
+#if NET7_0_OR_GREATER
+    [Option('r', "required-properties", Required = false, HelpText = "Include C# 11 Required keywords", Default = false)]
+#endif
+    public bool SupportRequiredProperties { get; set; }
+
     [Option("stringbuilder-pool-size", Required = false, HelpText = "StringBuilder pool size for building query params. If 0, a simple string concat is used instead", Default = 50)]
     public int StringBuilderPoolSize { get; set; }
 

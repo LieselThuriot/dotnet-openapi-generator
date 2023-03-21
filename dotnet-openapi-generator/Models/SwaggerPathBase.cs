@@ -141,7 +141,7 @@ internal abstract class SwaggerPathBase
                 if (x.item == typeof(Stream).FullName)
                 {
                     contents += $@"
-        using var {paramContentName} = new System.Net.Http.StreamContent({paramName});
+        using System.Net.Http.StreamContent {paramContentName} = new({paramName});
         {paramContentName}.Headers.Add(""Content-Disposition"", ""form-data; name=\""formFile\"""");
         {paramContentName}.Headers.Add(""Content-Type"", System.Net.Mime.MediaTypeNames.Text.Plain);
 ";
@@ -149,7 +149,7 @@ internal abstract class SwaggerPathBase
                 else if (paramName.StartsWith("@system_IO_Stream"))
                 {
                     contents += $@"
-        using var {paramContentName} = new System.Net.Http.StreamContent({paramName});
+        using System.Net.Http.StreamContent {paramContentName} = new({paramName});
 ";
                 }
                 else
@@ -160,7 +160,7 @@ internal abstract class SwaggerPathBase
                 }
             }
 
-            clientCall = $@"        {queryContent}using var __my_request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.{operation}, $""{apiPath}"");
+            clientCall = $@"        {queryContent}using System.Net.Http.HttpRequestMessage __my_request = new(System.Net.Http.HttpMethod.{operation}, $""{apiPath}"");
         {contents}
         __my_request.Content = new System.Net.Http.MultipartFormDataContent
         {{

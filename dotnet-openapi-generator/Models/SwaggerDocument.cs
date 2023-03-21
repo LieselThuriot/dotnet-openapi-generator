@@ -24,13 +24,14 @@ internal class SwaggerDocument
         int stringBuilderPoolSize = options.StringBuilderPoolSize;
         bool treeShaking = options.TreeShaking && (excludeObsolete || filter is not null);
         bool includeJsonSourceGenerators = options.IncludeJsonSourceGenerators;
+        bool supportRequiredProperties = options.SupportRequiredProperties;
 
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();
         string clientModifierValue = options.ClientModifier?.ToString().ToLowerInvariant() ?? modifierValue;
 
         IEnumerable<string> usedComponents = await paths.Generate(path, @namespace, modifierValue, excludeObsolete, filter, includeInterfaces, clientModifierValue, stringBuilderPoolSize, options.OAuthType, includeJsonSourceGenerators, token);
 
-        await components.Generate(path, @namespace, modifierValue, usedComponents, treeShaking, jsonConstructorAttribute, includeJsonSourceGenerators, token);
+        await components.Generate(path, @namespace, modifierValue, clientModifierValue, usedComponents, treeShaking, jsonConstructorAttribute, includeJsonSourceGenerators, supportRequiredProperties, token);
 
         if (!options.ExcludeProject)
         {

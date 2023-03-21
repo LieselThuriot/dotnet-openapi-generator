@@ -35,52 +35,59 @@ dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.8
 
 ```bash
 C:\Git > dotnet openapi-generator --help
-openapi-generator 7.0.0-preview.8
+dotnet-openapi-generator 7.0.0-preview.8
 Steven Thuriot
 
-  -n, --namespace                 (Default: Project name) The namespace used for the generated files
+  -n, --namespace                    (Default: Project name) The namespace used for the generated files
 
-  -d, --directory                 (Default: Current Directory) The directory to place the files in
+  -d, --directory                    (Default: Current Directory) The directory to place the files in
 
-  -m, --modifier                  (Default: Public) The modifier for the generated files. Can be Public or Internal
+  -m, --modifier                     (Default: Public) The modifier for the generated files. Can be Public or Internal
 
-  -c, --clean-directory           (Default: false) Delete folder before generating
+  -c, --clean-directory              (Default: false) Delete folder before generating
 
-  -f, --filter                    (Default: No filter) Only generate Clients that match the supplied regex filter
+  -f, --filter                       (Default: No filter) Only generate Clients that match the supplied regex filter
 
-  --client-modifier               (Default: -m) The modifier for the generated clients; Useful when generating with
-                                  interfaces. Can be Public or Internal
+  --client-modifier                  (Default: -m) The modifier for the generated clients; Useful when generating with
+                                     interfaces. Can be Public or Internal
 
-  -s, --tree-shake                (Default: false) Skip generating unused models
+  -s, --tree-shake                   (Default: false) Skip generating unused models
 
-  --json-constructor-attribute    (Default: System.Text.Json.Serialization.JsonConstructor) Json Constructor Attribute.
-                                  Constructors are generated when the class contains required properties.
+  --json-constructor-attribute       (Default: System.Text.Json.Serialization.JsonConstructor) Json Constructor
+                                     Attribute. Constructors are generated when the class contains required properties
 
-  -j, --json-source-generators    (Default: false) Include dotnet 7.0+ Json Source Generators
+  -j, --json-source-generators       (Default: false) Include dotnet 7.0+ Json Source Generators
 
-  --stringbuilder-pool-size       (Default: 50) StringBuilder pool size for building query params. If 0, a simple string
-                                  concat is used instead.
+  -r, --required-properties          (Default: false) Include C# 11 Required keywords
 
-  --oauth-type                    (Default: None) Includes an OAuth Client. Can be ClientCredentials, TokenExchange or
-                                  CachedTokenExchange
+  --stringbuilder-pool-size          (Default: 50) StringBuilder pool size for building query params. If 0, a simple
+                                     string concat is used instead
 
-  -i, --interfaces                (Default: false) Generate interfaces for the clients
+  --oauth-type                       (Default: None) Includes an OAuth Client. Can be ClientCredentials, TokenExchange
+                                     or CachedTokenExchange
 
-  -p, --no-project                (Default: false) Do not generate project
+  --oauth-client-credential-style    (Default: PostBody) When including an OAuth Client, we can either pass values in
+                                     the body or as a basic auth header. Can be PostBody or AuthorizationHeader
 
-  -o, --no-obsolete               (Default: false) Do not generate obsolete endpoints
+  -i, --interfaces                   (Default: false) Generate interfaces for the clients
 
-  -a, --additional-document       Location of additional swagger document, used to merge into the main one. Can be both
-                                  an http location or a local one and can be used multiple times.
+  -p, --no-project                   (Default: false) Do not generate project
 
-  --help                          Display this help screen.
+  -o, --no-obsolete                  (Default: false) Do not generate obsolete endpoints
 
-  --version                       Display version information.
+  -a, --additional-document          Location of additional swagger document, used to merge into the main one. Can be
+                                     both an http location or a local one and can be used multiple times
 
-  value pos. 0                    Required. Name of the project
+  -v, --verbose                      (Default: false) Verbose logging
 
-  value pos. 1                    Required. Location of the swagger document. Can be both an http location or a local
-                                  one
+  --help                             Display this help screen.
+
+  --version                          Display version information.
+
+  value pos. 0                       Required. Name of the project
+
+  value pos. 1                       Required. Location of the swagger document. Can be both an http location or a local
+                                     one
 ```
 
 ## Registration
