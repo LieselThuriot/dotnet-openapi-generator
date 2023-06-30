@@ -132,7 +132,7 @@ public class Options
             return GetLocalDocument(documentLocation);
         }
 
-        Logger.LogError("Could not document " + documentLocation);
+        Logger.LogError("Could not resolve document " + documentLocation);
         return Task.FromException<string>(new("Error resolving document"));
     }
 

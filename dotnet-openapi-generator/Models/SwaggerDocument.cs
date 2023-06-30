@@ -74,7 +74,7 @@ internal class SwaggerDocument
 
   <PropertyGroup>
     <TargetFramework>net{netVersion.Major}.{netVersion.Minor}</TargetFramework>
-	<LangVersion>latest</LangVersion>{additionalTags}
+    <LangVersion>latest</LangVersion>{additionalTags}
   </PropertyGroup>
 
   <ItemGroup>

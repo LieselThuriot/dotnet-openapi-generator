@@ -78,8 +78,8 @@ internal class SwaggerSchema
             return null;
         }
 
-        var parameters = baseProperties.Union(requiredProperties).Select(x => x.value.ResolveType() + " " + x.key);
-        var assignements = requiredProperties.Select(x => x.key[0..1].ToUpperInvariant() + x.key[1..] + " = " + x.key + ";");
+        var parameters = baseProperties.Union(requiredProperties).Select(x => x.value.ResolveType() + " " + x.key.AsSafeVariableName());
+        var assignements = requiredProperties.Select(x => x.key[0..1].ToUpperInvariant() + x.key[1..] + " = " + x.key.AsSafeVariableName() + ";");
 
         var requiredCtorAttributes = "";
         var shouldOmitDefaultCtor = string.IsNullOrWhiteSpace(jsonConstructorAttribute);

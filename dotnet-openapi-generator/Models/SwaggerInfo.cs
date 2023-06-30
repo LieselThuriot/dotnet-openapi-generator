@@ -37,8 +37,8 @@ public class SwaggerInfo
                 AppendVersion(match.Groups["private"], null);
 
                 tags += $@"
-	<AssemblyVersion>1.0.0</AssemblyVersion>
-	<Version>{versionTag}</Version>";
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <Version>{versionTag}</Version>";
             }
         }
 
@@ -46,14 +46,14 @@ public class SwaggerInfo
         {
             var escaped = SecurityElement.Escape(title);
             tags += $@"
-	<Title>{escaped}</Title>
-	<Product>{escaped}</Product>";
+    <Title>{escaped}</Title>
+    <Product>{escaped}</Product>";
         }
 
         if (!string.IsNullOrEmpty(description))
         {
             tags += $@"
-	<Description>{SecurityElement.Escape(description)}</Description>";
+    <Description>{SecurityElement.Escape(description)}</Description>";
         }
 
         return tags;
