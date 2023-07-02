@@ -16,7 +16,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net$(openapi-generator-version)</TargetFramework>
-		<Version>$(openapi-generator-version).0-preview.9</Version>
+		<Version>$(openapi-generator-version).0-preview.10</Version>
 		<Authors>Steven Thuriot</Authors>
 		<Copyright>$(Authors)</Copyright>
 		<PackAsTool>true</PackAsTool>

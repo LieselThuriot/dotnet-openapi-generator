@@ -8,6 +8,22 @@ internal static class Logger
 {
     internal static bool Verbose { get; set; }
 
+    internal static readonly bool s_canBeFancy;
+
+    static Logger()
+    {
+        try
+        {
+            _ = CursorLeft; //This crashes in some consoles, e.g. Powershell ISE
+            s_canBeFancy = true;
+        }
+        catch
+        {
+            s_canBeFancy = false;
+        }
+    }
+
+
     public static void LogStatus(int current, int max, string message)
     {
         LogStatus(current + "/" + max + ": " + message);
@@ -15,15 +31,32 @@ internal static class Logger
 
     public static void LogStatus(string message)
     {
-        BlankLine();
+        if (!Verbose)
+        {
+            BlankLine();
+        }
+        else if (s_canBeFancy)
+        {
+            Log(NewLine);
+        }
+
         Log(message);
     }
 
     public static void BlankLine()
     {
-        if (CursorLeft > 0)
+        if (s_canBeFancy)
         {
-            Log("\r", new string(' ', CursorLeft), "\r");
+            if (CursorLeft > 0)
+            {
+                SetCursorPosition(0, CursorTop);
+                Write(new string(' ', WindowWidth));
+                SetCursorPosition(0, CursorTop);
+            }
+        }
+        else
+        {
+            Log(NewLine);
         }
     }
 
@@ -36,7 +69,7 @@ internal static class Logger
     {
         if (Verbose)
         {
-            if (CursorLeft > 0)
+            if (!s_canBeFancy || CursorLeft > 0)
             {
                 Log(NewLine);
             }
@@ -49,7 +82,7 @@ internal static class Logger
     {
         if (Verbose)
         {
-            if (CursorLeft > 0)
+            if (!s_canBeFancy || CursorLeft > 0)
             {
                 Log(NewLine);
             }
@@ -70,15 +103,22 @@ internal static class Logger
 
     private static void LogColored(ConsoleColor color, params string[] messages)
     {
-        var oldColor = ForegroundColor;
-        try
+        if (s_canBeFancy)
         {
-            ForegroundColor = color;
-            Log(messages);
+            var oldColor = ForegroundColor;
+            try
+            {
+                ForegroundColor = color;
+                Log(messages);
+            }
+            finally
+            {
+                ForegroundColor = oldColor;
+            }
         }
-        finally
+        else
         {
-            ForegroundColor = oldColor;
+            Log(messages);
         }
     }
 
