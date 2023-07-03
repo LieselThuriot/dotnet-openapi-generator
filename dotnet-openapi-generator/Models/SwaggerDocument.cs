@@ -70,10 +70,20 @@ internal class SwaggerDocument
             }
         }
 
+        string targetframework = "";
+#pragma warning disable CS0162 // Unreachable code detected
+        if (Constants.GeneratingNetStandard)
+        {
+            additionalIncludes += $@"
+    <PackageReference Include=""System.Text.Json"" Version=""[{netVersion.Major}.{netVersion.Minor}.{netVersion.Build},)"" />";
+            targetframework = "standard";
+        }
+#pragma warning restore CS0162 // Unreachable code detected
+
         return File.WriteAllTextAsync(file, @$"<Project Sdk=""Microsoft.NET.Sdk"">
 
   <PropertyGroup>
-    <TargetFramework>net{netVersion.Major}.{netVersion.Minor}</TargetFramework>
+    <TargetFramework>net{targetframework}{netVersion.Major}.{netVersion.Minor}</TargetFramework>
     <LangVersion>latest</LangVersion>{additionalTags}
   </PropertyGroup>
 
@@ -312,7 +322,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
             Address = discoveryDocumentResponse.TokenEndpoint,
             ClientId = _tokenOptions.ClientId,
             ClientSecret = _tokenOptions.ClientSecret,
-            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle}
+            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle},
             Parameters = new()
             {{
                 {{ IdentityModel.OidcConstants.TokenRequest.SubjectTokenType, IdentityModel.OidcConstants.TokenTypeIdentifiers.AccessToken }},

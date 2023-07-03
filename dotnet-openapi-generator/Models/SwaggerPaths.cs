@@ -231,7 +231,7 @@ namespace {@namespace};
         set
         {{
             _optionType = value ?? throw new System.ArgumentNullException(nameof(OptionType));
-            if (!_optionType.IsAssignableTo(typeof(ClientOptions)))
+            if (!typeof(ClientOptions).IsAssignableFrom(_optionType))
             {{
                 throw new System.NotSupportedException(""OptionType must inherit ClientOptions"");
             }}
@@ -449,7 +449,7 @@ namespace {@namespace}.Clients;
         Logger.LogInformational("Generating QueryBuilder");
         const string withoutStringBuilders = @"private string _result = """";
 
-    public void AddParameter(string? value, [System.Runtime.CompilerServices.CallerArgumentExpression(""value"")] string valueExpression = """")
+    public void AddParameter(string? value, string valueExpression)
     {
         if (!string.IsNullOrEmpty(value))
         {
@@ -473,7 +473,7 @@ namespace {@namespace}.Clients;
         _builder = __StringBuilderPool.Acquire();
     }
 
-    public void AddParameter(string? value, [System.Runtime.CompilerServices.CallerArgumentExpression(""value"")] string valueExpression = """")
+    public void AddParameter(string? value, string valueExpression)
     {
         if (!string.IsNullOrEmpty(value))
         {
@@ -512,7 +512,7 @@ internal struct __QueryBuilder
 {{
     {(stringBuilderPoolSize > 0 ? withStringBuilders : withoutStringBuilders)}
 
-    public void AddParameter<T>(T? value, [System.Runtime.CompilerServices.CallerArgumentExpression(""value"")] string valueExpression = """")
+    public void AddParameter<T>(T? value, string valueExpression)
     {{
         switch (value)
         {{
@@ -541,7 +541,7 @@ internal struct __QueryBuilder
         }}
     }}
 
-    public void AddParameter<T>(System.Collections.Generic.List<T>? values, [System.Runtime.CompilerServices.CallerArgumentExpression(""values"")] string valueExpression = """")
+    public void AddParameter<T>(System.Collections.Generic.List<T>? values, string valueExpression)
     {{
         if (values is null)
         {{
@@ -551,7 +551,7 @@ internal struct __QueryBuilder
         AddParameter(System.Linq.Enumerable.AsEnumerable(values), valueExpression);
     }}
 
-    public void AddParameter<T>(System.Collections.Generic.IEnumerable<T?>? values, [System.Runtime.CompilerServices.CallerArgumentExpression(""values"")] string valueExpression = """")
+    public void AddParameter<T>(System.Collections.Generic.IEnumerable<T?>? values, string valueExpression)
     {{
         if (values is null)
         {{
@@ -625,6 +625,24 @@ internal static class __StringBuilderPool
         s_defaultOptions.TypeInfoResolver = System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine({@namespace.AsSafeString(replaceDots: true).Replace("_", "")}JsonSerializerContext.Default, new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());";
         }
 
+#pragma warning disable CS0162 // Unreachable code detected
+        string deserialize, asyncDeSerializeContent;
+        if (Constants.GeneratingNetStandard)
+        {
+            asyncDeSerializeContent = "async ";
+            deserialize = @"
+    {
+        using System.IO.Stream contentStream = await response.Content.ReadAsStreamAsync();
+        return await System.Text.Json.JsonSerializer.DeserializeAsync<T>(contentStream, _options, token);
+    }";
+        }
+        else
+        {
+            asyncDeSerializeContent = "";
+            deserialize = " => System.Net.Http.Json.HttpContentJsonExtensions.ReadFromJsonAsync<T>(response.Content, _options, token);";
+        }
+#pragma warning restore CS0162 // Unreachable code detected
+
         await File.WriteAllTextAsync(Path.Combine(path, "__ClientOptions.cs"), Constants.Header + $@"namespace {@namespace}.Clients;
 
 [System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
@@ -673,7 +691,7 @@ internal static class __StringBuilderPool
         return InterceptRequest(request, token);
     }}
 
-    protected internal virtual System.Net.Http.HttpContent CreateContent<T>(T content) => new System.Net.Http.StringContent(SerializeContent(content), System.Text.Encoding.UTF8, System.Net.Mime.MediaTypeNames.Application.Json);
+    protected internal virtual System.Net.Http.HttpContent CreateContent<T>(T content) => new System.Net.Http.StringContent(SerializeContent(content), System.Text.Encoding.UTF8, ""application/json"");
 
     protected internal {(includeOAuth ? "async " : "")}virtual System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> InterceptRequest(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken token)
     {{
@@ -685,7 +703,7 @@ internal static class __StringBuilderPool
 
     protected internal virtual string SerializeContent<T>(T content) => System.Text.Json.JsonSerializer.Serialize(content, options: _options);
 
-    protected internal virtual System.Threading.Tasks.Task<T?> DeSerializeContent<T>(System.Net.Http.HttpResponseMessage response, System.Threading.CancellationToken token) => System.Net.Http.Json.HttpContentJsonExtensions.ReadFromJsonAsync<T>(response.Content, _options, token);
+    protected internal virtual {asyncDeSerializeContent}System.Threading.Tasks.Task<T?> DeSerializeContent<T>(System.Net.Http.HttpResponseMessage response, System.Threading.CancellationToken token){deserialize}
 
     protected internal virtual System.Threading.Tasks.Task InterceptResponse(System.Net.Http.HttpResponseMessage result, System.Threading.CancellationToken token)
     {{

@@ -66,7 +66,7 @@ internal abstract class SwaggerPathBase
         var queryContent = "";
         if (queryParams.Count > 0)
         {
-            queryContent += "__QueryBuilder __my_queryBuilder = new();" + Environment.NewLine + string.Concat(queryParams.Select(x => $"        __my_queryBuilder.AddParameter({x.name});" + Environment.NewLine)) + Environment.NewLine + "        ";
+            queryContent += "__QueryBuilder __my_queryBuilder = new();" + Environment.NewLine + string.Concat(queryParams.Select(x => $"        __my_queryBuilder.AddParameter({x.name}, \"{x.name.TrimStart('@')}\");" + Environment.NewLine)) + Environment.NewLine + "        ";
             apiPath += "{__my_queryBuilder}";
         }
 

@@ -16,10 +16,18 @@ internal static class Constants
 #pragma warning disable CS8618 // Non-nullable variable must contain a non-null value when exiting constructor. Consider declaring it as nullable.
 
 ";
-
     private static readonly Lazy<Version> _version = new(() => new Version(Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>()!.Version));
     public static Version Version => _version.Value;
 
-    private static readonly Lazy<string> _productVersion = new(() => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion);
+    private static string GetInformationalVersion() => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
+
+#if GENERATING_NETSTANDARD
+    public const bool GeneratingNetStandard = true;
+    private static readonly Lazy<string> _productVersion = new(() => GetInformationalVersion() + " ( NetStandard )");
+#else
+    public const bool GeneratingNetStandard = false;
+    private static readonly Lazy<string> _productVersion = new(GetInformationalVersion);
+#endif
+
     public static string ProductVersion => _productVersion.Value;
 }
