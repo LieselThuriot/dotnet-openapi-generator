@@ -304,7 +304,7 @@ namespace {@namespace};
             where TClient : class" : "")}
             where TImplementation : class{(includeInterfaces ? ", TClient" : "")}
         {{
-            var apiClientHttpBuilder = services.AddHttpClient<{(includeInterfaces ? "TClient, " : "")}TImplementation>();
+            var apiClientHttpBuilder = services.AddHttpClient<{(includeInterfaces ? "TClient, " : "")}TImplementation>(""{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}"" + typeof({(includeInterfaces ? "TClient" : "TImplementation")}).Name);
 
             if (registration.ConfigureClientWithServiceProvider is not null)
             {{
