@@ -10,8 +10,17 @@
 		<openapi-generator-version>$(TargetFrameworkVersion)</openapi-generator-version>
 	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(openapi-generator-version)' == ''">
+  <!--Testing-->
+  <!--
+  <PropertyGroup>
+    <openapi-generator-netstandard>2.0</openapi-generator-netstandard>
     <openapi-generator-version>6.0</openapi-generator-version>
+    <openapi-generator-version-string>2.0-preview.11</openapi-generator-version-string>
+  </PropertyGroup>
+  -->
+  
+  <PropertyGroup Condition="'$(openapi-generator-version)' == ''">
+    <openapi-generator-version>7.0</openapi-generator-version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(openapi-generator-version-string)' == ''">

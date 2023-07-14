@@ -55,17 +55,17 @@ internal class SwaggerDocument
         if (options.OAuthType is not OAuthType.None)
         {
             additionalIncludes += @"
-    <PackageReference Include=""IdentityModel"" Version=""6.0.0"" />";
+    <PackageReference Include=""IdentityModel"" Version=""[6.*,)"" />";
 
             if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
             {
                 additionalIncludes += @"
-    <PackageReference Include=""Microsoft.AspNetCore.Http"" Version=""2.2.2"" />";
+    <PackageReference Include=""Microsoft.AspNetCore.Http"" Version=""[2.*,)"" />";
 
                 if (options.OAuthType is OAuthType.CachedTokenExchange)
                 {
                     additionalIncludes += $@"
-    <PackageReference Include=""Microsoft.Extensions.Caching.Memory"" Version=""[{netVersion.Major}.{netVersion.Minor}.{netVersion.Build},)"" />";
+    <PackageReference Include=""Microsoft.Extensions.Caching.Memory"" Version=""[{netVersion.Major}.*,)"" />";
                 }
             }
         }
@@ -75,7 +75,7 @@ internal class SwaggerDocument
         if (Constants.GeneratingNetStandard)
         {
             additionalIncludes += $@"
-    <PackageReference Include=""System.Text.Json"" Version=""[{netVersion.Major}.{netVersion.Minor}.{netVersion.Build},)"" />";
+    <PackageReference Include=""System.Text.Json"" Version=""[6.*,)"" />";
             targetframework = "standard";
         }
 #pragma warning restore CS0162 // Unreachable code detected
@@ -88,7 +88,7 @@ internal class SwaggerDocument
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Extensions.Http"" Version=""[{netVersion.Major}.{netVersion.Minor}.{netVersion.Build},)"" />{additionalIncludes}
+    <PackageReference Include=""Microsoft.Extensions.Http"" Version=""[{netVersion.Major}.*,)"" />{additionalIncludes}
   </ItemGroup>
 
 </Project>
@@ -191,7 +191,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
     {{
         if (response.ErrorType == IdentityModel.Client.ResponseErrorType.Exception)
         {{
-            return response.Exception;
+            return response.Exception ?? new(response.Error ?? ""Unknown Error"");
         }}
 
         return new System.Exception(""Could not request token"");
@@ -228,7 +228,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         Creation = System.DateTime.UtcNow;
     }}
 
-    public static implicit operator ApiAccessToken(IdentityModel.Client.TokenResponse response) => new(response.AccessToken, response.TokenType, response.ExpiresIn);
+    public static implicit operator ApiAccessToken(IdentityModel.Client.TokenResponse response) => new(response.AccessToken!, response.TokenType!, response.ExpiresIn);
     public static implicit operator System.Net.Http.Headers.AuthenticationHeaderValue(ApiAccessToken token) => new(token.TokenType, token.AccessToken);
 
     public string AccessToken {{ get; }}
@@ -286,7 +286,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         {{
             ClientId = options.ClientId,
             ClientSecret = options.ClientSecret,
-            Address = discoveryDocumentResponse.TokenEndpoint,
+            Address = discoveryDocumentResponse.TokenEndpoint!,
             ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle}
         }});
 
@@ -319,7 +319,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
         var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(""{options.Namespace.AsSafeString(replaceDots: true).Replace("_", "")}TokenRequestClient""), new IdentityModel.Client.TokenClientOptions
         {{
-            Address = discoveryDocumentResponse.TokenEndpoint,
+            Address = discoveryDocumentResponse.TokenEndpoint!,
             ClientId = _tokenOptions.ClientId,
             ClientSecret = _tokenOptions.ClientSecret,
             ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle},
