@@ -17,25 +17,25 @@ internal static class Extensions
     }
 
 
-    public static string AsSafeString(this string? value, bool replaceDots = true)
+    public static string AsSafeString(this string? value, bool replaceDots = true, string replacement = "_")
     {
         if (string.IsNullOrEmpty(value))
         {
             return "";
         }
 
-        value = Regexes.FullnameType().Replace(value, x => x.Groups["genericType"].Value + "_" + x.Groups["type"].Value);
+        value = Regexes.FullnameType().Replace(value, x => x.Groups["genericType"].Value + replacement + x.Groups["type"].Value);
 
         if (replaceDots)
         {
-            value = Regexes.SafeStringWithoutDots().Replace(value, "_");
+            value = Regexes.SafeStringWithoutDots().Replace(value, replacement);
         }
         else
         {
-            value = Regexes.SafeString().Replace(value, "_");
+            value = Regexes.SafeString().Replace(value, replacement);
         }
 
-        return Regexes.MultiUnderscore().Replace(value, "_").Trim('_');
+        return Regexes.MultiUnderscore().Replace(value, replacement).Trim(replacement.ToCharArray());
     }
 
     public static IEnumerable<string> AsUniques(this IEnumerable<string> values)

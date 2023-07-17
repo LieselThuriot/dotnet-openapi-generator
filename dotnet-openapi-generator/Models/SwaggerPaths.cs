@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace dotnet.openapi.generator;
 
@@ -70,8 +71,12 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
     {
         Logger.LogInformational("Generating Registrations");
 
+        var clientNames = clients.OrderBy(x => x)
+                                 .Select(x => $"        public const string {x} = \"{@namespace.AsSafeString(replaceDots: true, replacement: "")}{x}Client\";")
+                                 .Aggregate((current, next) => current + Environment.NewLine + next);
+
         var addHttpClientRegistrations = clients.OrderBy(x => x)
-                                                .Select(x => $"        Register<{GetClientGeneric(x)}>();")
+                                                .Select(x => $"        Register<{GetClientGeneric(x)}>(__ClientNames.{x});")
                                                 .Aggregate((current, next) => current + Environment.NewLine + next);
 
         string GetClientGeneric(string name)
@@ -92,6 +97,11 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 
         if (oAuthType is not OAuthType.None)
         {
+            clientNames += $@"
+
+        public const string TokenRequestClient = ""{@namespace.AsSafeString(replaceDots: true, replacement: "")}TokenRequestClient"";
+        public const string DiscoveryCache = ""{@namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache"";";
+
             additionalRegistrations = $@"
 
         TokenOptions tokenOptions = registration.TokenOptions;
@@ -110,23 +120,23 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
             services.TryAddScoped(typeof(ITokenRequestClient), registration.TokenRequestClientType);
         }}
 
-        var builderFor{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}TokenRequestClientHttpClient = services.AddHttpClient(""{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}TokenRequestClient"");
+        var builderFor{@namespace.AsSafeString(replaceDots: true, replacement: "")}TokenRequestClientHttpClient = services.AddHttpClient(__ClientNames.TokenRequestClient);
         if (registration.ConfigureTokenRequestClientBuilder is not null)
         {{
-            registration.ConfigureTokenRequestClientBuilder(builderFor{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}TokenRequestClientHttpClient);
+            registration.ConfigureTokenRequestClientBuilder(builderFor{@namespace.AsSafeString(replaceDots: true, replacement: "")}TokenRequestClientHttpClient);
         }}
 
-        var builderFor{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCacheHttpClient = services.AddHttpClient(""{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCache"");
+        var builderFor{@namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCacheHttpClient = services.AddHttpClient(__ClientNames.DiscoveryCache);
         if (registration.ConfigureDiscoveryCacheClientBuilder is not null)
         {{
-            registration.ConfigureDiscoveryCacheClientBuilder(builderFor{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCacheHttpClient);
+            registration.ConfigureDiscoveryCacheClientBuilder(builderFor{@namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCacheHttpClient);
         }}
 
         string authorityUrl = tokenOptions.AuthorityUrl.ToString();
         services.TryAddSingleton(r =>
         {{
             var factory = r.GetRequiredService<System.Net.Http.IHttpClientFactory>();
-            return new __{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCache(authorityUrl, factory);
+            return new __{@namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache(authorityUrl, factory);
         }});";
 
             registrationClassAdditionals += @"
@@ -277,6 +287,11 @@ namespace {@namespace};
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 {modifier} static class Registrations
 {{
+    public static class __ClientNames
+    {{
+{clientNames}
+    }}
+
     public static IServiceCollection RegisterApiClients(this IServiceCollection services, ApiRegistration registration)
     {{
         if (registration.OptionsFactory is not null)
@@ -300,11 +315,11 @@ namespace {@namespace};
 
         return services;
 
-        void Register<{(includeInterfaces ? "TClient, " : "")}TImplementation>(){(includeInterfaces ? @"
+        void Register<{(includeInterfaces ? "TClient, " : "")}TImplementation>(string httpClientName){(includeInterfaces ? @"
             where TClient : class" : "")}
             where TImplementation : class{(includeInterfaces ? ", TClient" : "")}
         {{
-            var apiClientHttpBuilder = services.AddHttpClient<{(includeInterfaces ? "TClient, " : "")}TImplementation>(""{@namespace.AsSafeString(replaceDots: true).Replace("_", "")}"" + typeof({(includeInterfaces ? "TClient" : "TImplementation")}).Name);
+            var apiClientHttpBuilder = services.AddHttpClient<{(includeInterfaces ? "TClient, " : "")}TImplementation>(httpClientName);
 
             if (registration.ConfigureClientWithServiceProvider is not null)
             {{
@@ -622,7 +637,7 @@ internal static class __StringBuilderPool
         {
             staticCtor = $@"
 
-        s_defaultOptions.TypeInfoResolver = System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine({@namespace.AsSafeString(replaceDots: true).Replace("_", "")}JsonSerializerContext.Default, new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());";
+        s_defaultOptions.TypeInfoResolver = System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine({@namespace.AsSafeString(replaceDots: true, replacement: "")}JsonSerializerContext.Default, new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());";
         }
 
 #pragma warning disable CS0162 // Unreachable code detected

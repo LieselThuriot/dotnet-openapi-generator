@@ -147,13 +147,13 @@ internal class __TokenCache : ITokenCache
 
 [System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-internal sealed class __{options.Namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCache
+internal sealed class __{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache
 {{
     private readonly IdentityModel.Client.DiscoveryCache _cache;
 
-    public __{options.Namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCache(string authorityUrl, System.Net.Http.IHttpClientFactory factory)
+    public __{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache(string authorityUrl, System.Net.Http.IHttpClientFactory factory)
     {{
-        _cache  = new(authorityUrl, () => factory.CreateClient(""{options.Namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCache""));
+        _cache  = new(authorityUrl, () => factory.CreateClient(Registrations.__ClientNames.DiscoveryCache));
     }}
 
     public System.Threading.Tasks.Task<IdentityModel.Client.DiscoveryDocumentResponse> GetAsync() => _cache.GetAsync();
@@ -169,12 +169,12 @@ public interface ITokenRequestClient
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal sealed class __TokenRequestClient : ITokenRequestClient
 {{
-    private readonly __{options.Namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCache _discoveryCache;
+    private readonly __{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache _discoveryCache;
     private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
     private readonly TokenOptions _tokenOptions;
     {GenerateFieldsBasedOnType(options)}
 
-    public __TokenRequestClient(__{options.Namespace.AsSafeString(replaceDots: true).Replace("_", "")}DiscoveryCache discoveryCache, System.Net.Http.IHttpClientFactory httpClientFactory, TokenOptions tokenOptions{additionalCtorParameters})
+    public __TokenRequestClient(__{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache discoveryCache, System.Net.Http.IHttpClientFactory httpClientFactory, TokenOptions tokenOptions{additionalCtorParameters})
     {{
         _discoveryCache = discoveryCache;
         _httpClientFactory = httpClientFactory;
@@ -282,7 +282,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
         var options = _tokenOptions;
 
-        var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(""{options.Namespace.AsSafeString(replaceDots: true).Replace("_", "")}TokenRequestClient""), new IdentityModel.Client.TokenClientOptions
+        var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient), new IdentityModel.Client.TokenClientOptions
         {{
             ClientId = options.ClientId,
             ClientSecret = options.ClientSecret,
@@ -317,7 +317,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
     {{
         var discoveryDocumentResponse = await _discoveryCache.GetAsync();
 
-        var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(""{options.Namespace.AsSafeString(replaceDots: true).Replace("_", "")}TokenRequestClient""), new IdentityModel.Client.TokenClientOptions
+        var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient), new IdentityModel.Client.TokenClientOptions
         {{
             Address = discoveryDocumentResponse.TokenEndpoint!,
             ClientId = _tokenOptions.ClientId,

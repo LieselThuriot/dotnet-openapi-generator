@@ -46,7 +46,7 @@ internal class SwaggerComponents
 
             if (attributes.Count > 0)
             {
-                var className = @namespace.AsSafeString(replaceDots: true).Replace("_", "");
+                var className = @namespace.AsSafeString(replaceDots: true, replacement: "");
 
                 var template = Constants.Header + $@"using {@namespace}.Models;
 
