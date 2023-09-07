@@ -49,13 +49,15 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
                         continue;
                     }
 
-                    if (clients.TryGetValue(tag, out var list))
+                    var safeTag = tag.AsSafeClientName();
+
+                    if (clients.TryGetValue(safeTag, out var list))
                     {
                         list.Add((item.Key, member));
                     }
                     else
                     {
-                        clients[tag] = new()
+                        clients[safeTag] = new()
                         {
                             (item.Key, member)
                         };

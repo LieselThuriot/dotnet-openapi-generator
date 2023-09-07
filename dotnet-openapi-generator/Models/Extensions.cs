@@ -2,20 +2,53 @@
 
 internal static class Extensions
 {
-    public static string AsSafeVariableName(this string value)
+    public static string AsSafeVariableName(this string value, string prefix = "@")
     {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "";
+        }
+
         string result = char.IsLower(value[0])
             ? value
             : value[0..1].ToLowerInvariant() + value[1..];
 
-        if (s_keywords.Contains(result))
-        {
-            result = '@' + result;
-        }
-
-        return result;
+        return result.AsSafeCSharpName(prefix);
     }
 
+    public static string AsSafeClientName(this string value, string prefix = "_")
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "";
+        }
+
+        string result = char.IsUpper(value[0])
+            ? value
+            : value[0..1].ToUpperInvariant() + value[1..];
+
+        if (result.EndsWith("Client", StringComparison.OrdinalIgnoreCase))
+        {
+            result = result[..^"Client".Length].TrimEnd();
+        }
+
+        return result.AsSafeCSharpName(prefix)
+                     .AsSafeString(replaceDots: true, replacement: "");
+    }
+
+    private static string AsSafeCSharpName(this string value, string prefix)
+    {
+        if (s_keywords.Contains(value))
+        {
+            value = prefix + value;
+        }
+        else if (char.IsNumber(value[0]))
+        {
+            value = prefix + value;
+        }
+
+        return value;
+    }
 
     public static string AsSafeString(this string? value, bool replaceDots = true, string replacement = "_")
     {
@@ -90,7 +123,7 @@ internal static class Extensions
         return string.Concat(split);
     }
 
-    private static readonly IEnumerable<string> s_keywords = new HashSet<string>()
+    private static readonly IEnumerable<string> s_keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "abstract",
         "as",
