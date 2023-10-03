@@ -13,6 +13,9 @@ internal class SwaggerSchema
     public SwaggerSchemaProperties? properties { get; set; }
 
     public SwaggerAllOfs? allOf { get; set; }
+    public SwaggerSchemaDiscriminator? discriminator { get; set; }
+
+    public IEnumerable<(string Key, SwaggerSchemaProperty Value)>? IterateProperties() => properties?.Iterate(discriminator?.propertyName);
 
     private string GetDefinitionType(string name, IEnumerable<SwaggerSchema> schemas)
     {
@@ -103,10 +106,7 @@ internal class SwaggerSchema
 ";
     }
 
-    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties()
-    {
-        return properties?.Where(x => x.Value.required.GetValueOrDefault() || !x.Value.nullable).Select(x => (x.Key, x.Value)).ToHashSet() ?? new(0);
-    }
+    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties() => IterateProperties()?.Where(x => x.Value.required.GetValueOrDefault() || !x.Value.nullable).ToHashSet() ?? new(0);
 
     private string GetInheritance()
     {
@@ -138,17 +138,36 @@ internal class SwaggerSchema
 
     public string? GetBody(bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
     {
-        return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas);
+        return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas, discriminator?.propertyName);
     }
 
-    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
+    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
     {
         name = name.AsSafeString();
         var fileName = Path.Combine(path, name + ".cs");
 
+        string attributes = "";
+        if (jsonPolymorphicAttribute is not null && jsonDerivedTypeAttribute is not null)
+        {
+            if (properties is not null && discriminator is not null && properties.TryGetValue(discriminator.propertyName, out SwaggerSchemaProperty? discriminatorProperty))
+            {
+                string discriminatorAttributes = $"[{jsonPolymorphicAttribute.Replace("{name}", discriminator.propertyName)}]{Environment.NewLine}" +
+                                                    string.Join(Environment.NewLine, discriminator.mapping
+                                                                                                  .Select(x => new
+                                                                                                  {
+                                                                                                      TypeName = x.Value.ResolveType(),
+                                                                                                      DiscriminatorValue = x.Key
+                                                                                                  })
+                                                                                                  .Where(x => schemas.ContainsKey(x.TypeName))
+                                                                                                  .Select(x => $"[{jsonDerivedTypeAttribute.Replace("{type}", x.TypeName).Replace("{value}", x.DiscriminatorValue)}]"));
+
+                attributes += Environment.NewLine + discriminatorAttributes;
+            }
+        }
+
         var template = Constants.Header + $@"namespace {@namespace}.Models;
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]{attributes}
 {(@enum is null
     ? "[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]" + Environment.NewLine
     : FlaggedEnum is not null
@@ -167,7 +186,7 @@ internal class SwaggerSchema
         {
             if (properties is not null)
             {
-                foreach (var property in properties)
+                foreach (var property in IterateProperties()!)
                 {
                     foreach (var component in property.Value.GetComponents(schemas, depth))
                     {

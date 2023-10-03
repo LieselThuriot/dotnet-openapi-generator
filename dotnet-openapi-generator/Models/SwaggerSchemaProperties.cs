@@ -4,11 +4,22 @@ namespace dotnet.openapi.generator;
 
 internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaProperty>
 {
-    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    public IEnumerable<(string Key, SwaggerSchemaProperty Value)> Iterate(string? exclusion)
+    {
+        foreach (var (key, value) in this)
+        {
+            if (key != exclusion)
+            {
+                yield return (key, value);
+            }
+        }
+    }
+
+    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? exclusion)
     {
         StringBuilder builder = new();
 
-        foreach (var item in this)
+        foreach (var item in Iterate(exclusion))
         {
             builder.Append('\t').AppendLine(item.Value.GetBody(item.Key, supportRequiredProperties));
         }
@@ -17,7 +28,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
                .Append('\t').AppendLine("System.Collections.Generic.IEnumerable<(string name, object? value)> __ICanIterate.IterateProperties()")
                .Append('\t').AppendLine("{");
 
-        var yields = GetAllYields(allOf, schemas).ToHashSet();
+        var yields = GetAllYields(allOf, schemas, exclusion).ToHashSet();
 
         if (yields.Count == 0)
         {
@@ -41,7 +52,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         return builder.ToString().TrimEnd();
     }
 
-    private IEnumerable<string> GetAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    private IEnumerable<string> GetAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? discriminatorProperty)
     {
         if (allOf is not null)
         {
@@ -52,7 +63,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
                 {
                     if (parentSchema.properties is not null)
                     {
-                        foreach (var parentYield in parentSchema.properties.GetAllYields(parentSchema.allOf, schemas))
+                        foreach (var parentYield in parentSchema.properties.GetAllYields(parentSchema.allOf, schemas, parentSchema.discriminator?.propertyName))
                         {
                             yield return parentYield;
                         }
@@ -61,44 +72,9 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
             }
         }
 
-        foreach (var key in Keys)
+        foreach (var (key, _) in Iterate(discriminatorProperty))
         {
             yield return key;
-        }
-    }
-
-    private void AppendAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas, StringBuilder builder)
-    {
-        if (allOf is not null)
-        {
-            AppendAllOfYields(allOf, schemas, builder);
-        }
-
-        AppendYields(builder);
-    }
-
-    private static void AppendAllOfYields(SwaggerAllOfs allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas, StringBuilder builder)
-    {
-        foreach (var item in allOf)
-        {
-            var type = item.ResolveType();
-            if (!string.IsNullOrEmpty(type) && schemas.TryGetValue(type, out var parentSchema))
-            {
-                parentSchema.properties?.AppendYields(builder);
-            }
-        }
-    }
-
-    private void AppendYields(StringBuilder builder)
-    {
-        foreach (var item in Keys)
-        {
-            builder.Append('\t').Append('\t')
-                   .Append("yield return (\"")
-                   .Append(item)
-                   .Append("\", ")
-                   .Append(item[0..1].ToUpperInvariant()).Append(item[1..])
-                   .AppendLine(");");
         }
     }
 }

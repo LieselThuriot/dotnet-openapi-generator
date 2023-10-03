@@ -1,4 +1,6 @@
-﻿namespace dotnet.openapi.generator;
+﻿using System.Text.Json;
+
+namespace dotnet.openapi.generator;
 
 internal static class Extensions
 {
@@ -121,6 +123,37 @@ internal static class Extensions
                          .Select(x => x[0..1].ToUpperInvariant() + x[1..]);
 
         return string.Concat(split);
+    }
+
+    public static string ResolveType(this string? typeToResolve, System.Text.Json.JsonElement? items = null, SwaggerSchemaPropertyAdditionalProperties? additionalProperties = null)
+    {
+        return typeToResolve switch
+        {
+            "date" or "date-time" => typeof(DateTime).FullName!,
+            "date-span" => typeof(TimeSpan).FullName!,
+            "boolean" => "bool",
+            "int32" or "integer" => "int",
+            "int64" => "long",
+            "uri" => typeof(Uri).FullName!,
+            "uuid" => typeof(Guid).FullName!,
+            "binary" => typeof(Stream).FullName!,
+            "array" => typeof(List<>).FullName![..^2] + "<" + items.ResolveArrayType(additionalProperties) + ">",
+            "object" when additionalProperties is not null => $"{typeof(Dictionary<,>).FullName![..^2]}<string, {ResolveType(additionalProperties.type, items, null)}>",
+            null => "object",
+            _ => typeToResolve.Replace("#/components/schemas/", "").AsSafeString()
+        };
+    }
+
+    public static string ResolveArrayType(this JsonElement? items, SwaggerSchemaPropertyAdditionalProperties? additionalProperties)
+    {
+        if (items is null)
+        {
+            return "object";
+        }
+
+        return items.Value.TryGetProperty("type", out var arrayType)
+                    ? ResolveType(arrayType.GetString(), items.Value.TryGetProperty("items", out var innerItems) ? innerItems : null, additionalProperties)
+                    : ResolveType(items.Value.GetProperty("$ref").GetString(), null, additionalProperties);
     }
 
     private static readonly IEnumerable<string> s_keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

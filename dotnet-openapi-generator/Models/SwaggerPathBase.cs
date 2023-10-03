@@ -107,7 +107,7 @@ internal abstract class SwaggerPathBase
             methodParameterBodies = requestBody.GetBody() + methodParameterBodies;
             if (requestBody.content?.multipartformdata is not null)
             {
-                content += string.Concat(requestBody.content.multipartformdata.schema.properties
+                content += string.Concat(requestBody.content.multipartformdata.schema.IterateProperties()
                                                .Select(x => x.Value.ResolveType()!)
                                                .Select(x => x.AsSafeString())
                                                .Select(x => "@" + x[0..1].ToLowerInvariant() + x[1..])
@@ -129,7 +129,7 @@ internal abstract class SwaggerPathBase
             var contents = "";
             List<string> contentNames = new();
 
-            foreach (var x in requestBody.content.multipartformdata.schema.properties.Values
+            foreach (var x in requestBody.content.multipartformdata.schema.IterateProperties().Select(x => x.Value)
                                             .Select(x => x.ResolveType()!)
                                             .Select(x => x.AsSafeString())
                                             .AsUniques(x => "@" + x[0..1].ToLowerInvariant() + x[1..]))
@@ -184,7 +184,7 @@ internal abstract class SwaggerPathBase
             {
                 if (requestBody.content?.multipartformdata is not null)
                 {
-                    passThroughParams = string.Concat(requestBody.content.multipartformdata.schema.properties
+                    passThroughParams = string.Concat(requestBody.content.multipartformdata.schema.IterateProperties()
                                                    .Select(x => x.Value.ResolveType()!)
                                                    .Select(x => x.AsSafeString())
                                                    .Select(x => "@" + x[0..1].ToLowerInvariant() + x[1..])
@@ -206,7 +206,7 @@ internal abstract class SwaggerPathBase
             {
                 if (requestBody.content?.multipartformdata is not null)
                 {
-                    passThroughParams = string.Concat(requestBody.content.multipartformdata.schema.properties
+                    passThroughParams = string.Concat(requestBody.content.multipartformdata.schema.IterateProperties()
                                                    .Select(x => x.Value.ResolveType()!)
                                                    .Select(x => x.AsSafeString())
                                                    .Select(x => "@" + x[0..1].ToLowerInvariant() + x[1..])

@@ -21,6 +21,8 @@ internal class SwaggerDocument
         Regex? filter = options.Filter;
         bool includeInterfaces = options.IncludeInterfaces;
         string? jsonConstructorAttribute = options.JsonConstructorAttribute;
+        string? jsonPolymorphicAttribute = options.JsonPolymorphicAttribute;
+        string? jsonDerivedTypeAttribute = options.JsonDerivedTypeAttribute;
         int stringBuilderPoolSize = options.StringBuilderPoolSize;
         bool treeShaking = options.TreeShaking && (excludeObsolete || filter is not null);
         bool includeJsonSourceGenerators = options.IncludeJsonSourceGenerators;
@@ -31,7 +33,7 @@ internal class SwaggerDocument
 
         IEnumerable<string> usedComponents = await paths.Generate(path, @namespace, modifierValue, excludeObsolete, filter, includeInterfaces, clientModifierValue, stringBuilderPoolSize, options.OAuthType, includeJsonSourceGenerators, token);
 
-        await components.Generate(path, @namespace, modifierValue, clientModifierValue, usedComponents, treeShaking, jsonConstructorAttribute, includeJsonSourceGenerators, supportRequiredProperties, token);
+        await components.Generate(path, @namespace, modifierValue, clientModifierValue, usedComponents, treeShaking, jsonConstructorAttribute, jsonPolymorphicAttribute, jsonDerivedTypeAttribute, includeJsonSourceGenerators, supportRequiredProperties, token);
 
         if (!options.ExcludeProject)
         {

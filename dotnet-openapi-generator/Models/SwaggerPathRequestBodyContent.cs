@@ -17,7 +17,7 @@ internal class SwaggerPathRequestBodyContent
         {
             var result = "";
 
-            foreach (var item in multipartformdata.schema.properties)
+            foreach (var item in multipartformdata.schema.IterateProperties())
             {
                 var type = item.Value.ResolveType()!;
                 result += $"{type} @{(type[0..1].ToLowerInvariant() + type[1..]).AsSafeString()}, ";
