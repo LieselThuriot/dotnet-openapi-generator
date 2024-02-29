@@ -25,7 +25,7 @@ internal class SwaggerPathParameter
                 myName += " = " + @default.ToString()!.ToLowerInvariant();
             }
         }
-        else if (@in == "query" || schema.nullable)
+        else if (schema.nullable || (@in == "query" && !required))
         {
             myName += " = default";
             if (!type!.EndsWith('?'))

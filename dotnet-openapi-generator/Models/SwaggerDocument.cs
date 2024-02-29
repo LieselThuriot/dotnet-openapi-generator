@@ -27,13 +27,14 @@ internal class SwaggerDocument
         bool treeShaking = options.TreeShaking && (excludeObsolete || filter is not null);
         bool includeJsonSourceGenerators = options.IncludeJsonSourceGenerators;
         bool supportRequiredProperties = options.SupportRequiredProperties;
+        string? jsonPropertyNameAttribute = options.JsonPropertyNameAttribute;
 
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();
         string clientModifierValue = options.ClientModifier?.ToString().ToLowerInvariant() ?? modifierValue;
 
-        IEnumerable<string> usedComponents = await paths.Generate(path, @namespace, modifierValue, excludeObsolete, filter, includeInterfaces, clientModifierValue, stringBuilderPoolSize, options.OAuthType, includeJsonSourceGenerators, token);
+        IEnumerable<string> usedComponents = await paths.Generate(path, @namespace, modifierValue, excludeObsolete, filter, includeInterfaces, clientModifierValue, stringBuilderPoolSize, options.OAuthType, includeJsonSourceGenerators, components.schemas, token);
 
-        await components.Generate(path, @namespace, modifierValue, clientModifierValue, usedComponents, treeShaking, jsonConstructorAttribute, jsonPolymorphicAttribute, jsonDerivedTypeAttribute, includeJsonSourceGenerators, supportRequiredProperties, token);
+        await components.Generate(path, @namespace, modifierValue, clientModifierValue, usedComponents, treeShaking, jsonConstructorAttribute, jsonPolymorphicAttribute, jsonDerivedTypeAttribute, jsonPropertyNameAttribute, includeJsonSourceGenerators, supportRequiredProperties, token);
 
         if (!options.ExcludeProject)
         {
@@ -73,14 +74,13 @@ internal class SwaggerDocument
         }
 
         string targetframework = "";
-#pragma warning disable CS0162 // Unreachable code detected
-        if (Constants.GeneratingNetStandard)
+#if GENERATING_NETSTANDARD
         {
             additionalIncludes += $@"
     <PackageReference Include=""System.Text.Json"" Version=""[6.*,)"" />";
             targetframework = "standard";
         }
-#pragma warning restore CS0162 // Unreachable code detected
+#endif
 
         return File.WriteAllTextAsync(file, @$"<Project Sdk=""Microsoft.NET.Sdk"">
 
@@ -145,7 +145,7 @@ internal class __TokenCache : ITokenCache
             }
         }
 
-        return File.WriteAllTextAsync(file, Constants.Header + @$"namespace {options.Namespace}.Clients;{additionalHelpers}
+        return File.WriteAllTextAsync(file, Constants.Header + $@"namespace {options.Namespace}.Clients;{additionalHelpers}
 
 [System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

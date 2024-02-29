@@ -17,27 +17,32 @@ Major and Minor version numbers always dictate the dotnet version being used.
 
 ### netstandard 2.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 2.0.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 2.0.0-preview.14
 ```
 
 ### netstandard 2.1 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 2.1.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 2.1.0-preview.14
 ```
 
 ### dotnet 5.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 5.0.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 5.0.0-preview.14
 ```
 
 ### dotnet 6.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 6.0.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 6.0.0-preview.14
 ```
 
 ### dotnet 7.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.14
+```
+
+### dotnet 8.0 generator installation
+```bash
+dotnet tool install dotnet-openapi-generator -g --version 8.0.0-preview.14
 ```
 
 
@@ -45,7 +50,7 @@ dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.13
 
 ```bash
 C:\Git > dotnet openapi-generator --help
-dotnet-openapi-generator 7.0.0-preview.13
+dotnet-openapi-generator 8.0.0-preview.14
 Steven Thuriot
 
   -n, --namespace                    (Default: Project name) The namespace used for the generated files
@@ -71,7 +76,12 @@ Steven Thuriot
 
   --json-derived-type-attribute      (Default: System.Text.Json.Serialization.JsonDerivedType(typeof({type}), typeDiscriminator: "{value}")) 
                                      Json Derived Type Attribute. Marks the derived types of the generated types using the specified attribute.
-                                     {type} and {value} are used as a template placeholders
+                                     {type} and {value} are used as template placeholders
+
+  --json-property-name-attribute     (Default: System.Text.Json.Serialization.JsonPropertyName("{name}"))
+                                     Json Property Name Attribute. Some property names are not valid in C#. This will make sure serialization works out.
+                                     {name} is used as a template placeholder
+
 
   -j, --json-source-generators       (Default: false) Include dotnet 7.0+ Json Source Generators
 
@@ -101,7 +111,7 @@ Steven Thuriot
 
   value pos. 0                       Required. Name of the project
 
-  value pos. 1                       Required. Location of the swagger document. Can be both an http location or a local one
+  value pos. 1                       Required. Location of the JSON swagger document. Can be both an http location or a local one
 ```
 
 ## Registration

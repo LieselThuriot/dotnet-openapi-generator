@@ -8,7 +8,7 @@ public class Options
     [Value(0, Required = true, HelpText = "Name of the project")]
     public string ProjectName { get; set; } = default!;
 
-    [Value(1, Required = true, HelpText = "Location of the swagger document. Can be both an http location or a local one")]
+    [Value(1, Required = true, HelpText = "Location of the JSON swagger document. Can be both an http location or a local one")]
     public string DocumentLocation { get; set; } = default!;
 
     [Option('n', "namespace", Required = false, HelpText = "(Default: Project name) The namespace used for the generated files")]
@@ -38,8 +38,11 @@ public class Options
     [Option("json-polymorphic-attribute", Required = false, HelpText = "Json Polymorphic Attribute. Marks the generated types as polymorphic using the specified attribute. {name} is used as a template placeholder", Default = "System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName = \"{name}\")")]
     public string? JsonPolymorphicAttribute { get; set; }
 
-    [Option("json-derived-type-attribute", Required = false, HelpText = "Json Derived Type Attribute. Marks the derived types of the generated types using the specified attribute. {type} and {value} are used as a template placeholders", Default = "System.Text.Json.Serialization.JsonDerivedType(typeof({type}), typeDiscriminator: \"{value}\")")]
+    [Option("json-derived-type-attribute", Required = false, HelpText = "Json Derived Type Attribute. Marks the derived types of the generated types using the specified attribute. {type} and {value} are used as template placeholders", Default = "System.Text.Json.Serialization.JsonDerivedType(typeof({type}), typeDiscriminator: \"{value}\")")]
     public string? JsonDerivedTypeAttribute { get; set; }
+
+    [Option("json-property-name-attribute", Required = false, HelpText = "Json Property Name Attribute. Some property names are not valid in C#. This will make sure serialization works out. {name} is used as a template placeholder", Default = "System.Text.Json.Serialization.JsonPropertyName(\"{name}\")")]
+    public string? JsonPropertyNameAttribute { get; set; }
 
 #if NET7_0_OR_GREATER
     [Option('j', "json-source-generators", Required = false, HelpText = "Include dotnet 7.0+ Json Source Generators", Default = false)]
@@ -80,8 +83,7 @@ public class Options
         Logger.Verbose = Verbose;
 
         Directory ??= System.IO.Directory.GetCurrentDirectory();
-
-        if (!Path.IsPathRooted(Directory))
+        if (!Path.IsPathRooted(Directory.TrimStart('\\', '/')))
         {
             Directory = new DirectoryInfo(Path.Combine(System.IO.Directory.GetCurrentDirectory(), Directory)).FullName;
             Logger.LogVerbose("Path isn't rooted, created rooted path: " + Directory);
@@ -92,7 +94,7 @@ public class Options
             DirectoryInfo directoryInfo = new(Directory);
             if (directoryInfo.Exists)
             {
-                Logger.LogVerbose("Cleaning up directory");
+                Logger.LogVerbose("Cleaning up directory " + directoryInfo.FullName);
                 directoryInfo.Delete(true);
                 directoryInfo.Create();
             }
@@ -127,19 +129,58 @@ public class Options
 #endif
     }
 
-    private static Task<string> GetDocument(string documentLocation)
+    private static async Task<string> GetDocument(string documentLocation)
     {
+        string? result = null;
         if (documentLocation.StartsWith("http", StringComparison.OrdinalIgnoreCase))
         {
-            return GetHttpDocument(documentLocation);
+            result = await GetHttpDocument(documentLocation);
         }
         else if (File.Exists(documentLocation))
         {
-            return GetLocalDocument(documentLocation);
+            result = await GetLocalDocument(documentLocation);
         }
 
-        Logger.LogError("Could not resolve document " + documentLocation);
-        return Task.FromException<string>(new("Error resolving document"));
+        if (result is null)
+        {
+            Logger.LogError("Could not resolve document " + documentLocation);
+            throw new ApplicationException("Error resolving document");
+        }
+
+        if (documentLocation.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) ||
+            documentLocation.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) ||
+            result.SkipWhile(char.IsWhiteSpace).FirstOrDefault() != '{')
+        {
+            try
+            {
+                result = ConvertYamlToJson(result);
+            }
+            catch
+            {
+                Logger.LogError("Assumed document was yaml but could not convert it. Continuing as normal.");
+            }
+        }
+
+        return result;
+    }
+
+    private static string ConvertYamlToJson(string result)
+    {
+        var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                                         .WithAttemptingUnquotedStringTypeDeserialization()
+                                         .Build();
+
+        var yamlObject = deserializer.Deserialize(result);
+
+        var serializer = new YamlDotNet.Serialization.SerializerBuilder()
+                                       .JsonCompatible()
+                                       .Build();
+
+        var json = serializer.Serialize(yamlObject);
+
+        Logger.LogVerbose("Converted document to json");
+
+        return json;
     }
 
     private static Task<string> GetLocalDocument(string documentLocation)

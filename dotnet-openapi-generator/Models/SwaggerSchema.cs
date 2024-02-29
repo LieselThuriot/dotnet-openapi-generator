@@ -1,14 +1,16 @@
-﻿namespace dotnet.openapi.generator;
+﻿using System.Text.Json.Serialization;
+
+namespace dotnet.openapi.generator;
 
 internal class SwaggerSchema
 {
     public SwaggerSchemaEnum? @enum { get; set; }
 
     [System.Text.Json.Serialization.JsonPropertyName("flagged-enum")]
-    public SwaggerSchemaFlaggedEnum? FlaggedEnum { get; set; }
+    public SwaggerSchemaFlaggedEnum? flaggedEnum { get; set; }
 
     [System.Text.Json.Serialization.JsonPropertyName("x-enumNames")]
-    public List<string>? EnumNames { get; set; }
+    public List<string>? enumNames { get; set; }
 
     public SwaggerSchemaProperties? properties { get; set; }
 
@@ -58,7 +60,7 @@ internal class SwaggerSchema
             return null;
         }
 
-        HashSet<(string key, SwaggerSchemaProperty value)> baseProperties = new();
+        HashSet<(string key, SwaggerSchemaProperty value)> baseProperties = [];
         HashSet<(string key, SwaggerSchemaProperty value)> requiredProperties = GetRequiredProperties();
 
         if (allOf is not null)
@@ -82,7 +84,23 @@ internal class SwaggerSchema
         }
 
         var parameters = baseProperties.Union(requiredProperties).Select(x => x.value.ResolveType() + " " + x.key.AsSafeVariableName());
-        var assignements = requiredProperties.Select(x => x.key[0..1].ToUpperInvariant() + x.key[1..] + " = " + x.key.AsSafeVariableName() + ";");
+        var assignements = requiredProperties.Select(x =>
+        {
+            var assignee = x.key[0..1].ToUpperInvariant() + x.key[1..];
+            var assignment = x.key.AsSafeVariableName();
+
+            if (char.IsDigit(assignee[0]))
+            {
+                assignee = "_" + assignee;
+            }
+
+            if (assignee == assignment)
+            {
+                assignee = "this." + assignee;
+            }
+
+            return assignee + " = " + assignment + ";";
+        });
 
         var requiredCtorAttributes = "";
         var shouldOmitDefaultCtor = string.IsNullOrWhiteSpace(jsonConstructorAttribute);
@@ -106,11 +124,11 @@ internal class SwaggerSchema
 ";
     }
 
-    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties() => IterateProperties()?.Where(x => x.Value.required.GetValueOrDefault() || !x.Value.nullable).ToHashSet() ?? new(0);
+    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties() => IterateProperties()?.Where(x => !x.Value.nullable /*|| x.Value.required.GetValueOrDefault()*/).ToHashSet() ?? new(0);
 
     private string GetInheritance()
     {
-        HashSet<string> toImplement = new();
+        HashSet<string> toImplement = [];
 
         if (allOf is not null)
         {
@@ -136,12 +154,12 @@ internal class SwaggerSchema
         return "";
     }
 
-    public string? GetBody(bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    public string? GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas, string modifier)
     {
-        return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas, discriminator?.propertyName);
+        return @enum?.GetBody(name, flaggedEnum, enumNames, modifier) ?? properties?.GetBody(allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
     }
 
-    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
+    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool supportRequiredProperties, SwaggerComponentSchemas schemas, CancellationToken token)
     {
         name = name.AsSafeString();
         var fileName = Path.Combine(path, name + ".cs");
@@ -158,7 +176,7 @@ internal class SwaggerSchema
                                                                                                       TypeName = x.Value.ResolveType(),
                                                                                                       DiscriminatorValue = x.Key
                                                                                                   })
-                                                                                                  .Where(x => schemas.ContainsKey(x.TypeName))
+                                                                                                  .Where(x => x.TypeName is not null && schemas.ContainsKey(x.TypeName))
                                                                                                   .Select(x => $"[{jsonDerivedTypeAttribute.Replace("{type}", x.TypeName).Replace("{value}", x.DiscriminatorValue)}]"));
 
                 attributes += Environment.NewLine + discriminatorAttributes;
@@ -170,11 +188,13 @@ internal class SwaggerSchema
 [System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]{attributes}
 {(@enum is null
     ? "[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]" + Environment.NewLine
-    : FlaggedEnum is not null
+    : (flaggedEnum is not null
         ? "[System.Flags]" + Environment.NewLine
-        : "")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
+        : "")
+        + "[System.Text.Json.Serialization.JsonConverter(typeof("+name+@"EnumConverter))]
+")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
 {{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}
-{GetBody(supportRequiredProperties, schemas)}
+{GetBody(name, supportRequiredProperties, jsonPropertyNameAttribute, schemas, modifier)}
 }}
 ";
         return File.WriteAllTextAsync(fileName, template, token);

@@ -4,7 +4,7 @@ namespace dotnet.openapi.generator;
 
 internal static class Extensions
 {
-    public static string AsSafeVariableName(this string value, string prefix = "@")
+    public static string AsSafeVariableName(this string value, string keywordPrefix = "@", string numberPrefix = "_")
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -15,7 +15,7 @@ internal static class Extensions
             ? value
             : value[0..1].ToLowerInvariant() + value[1..];
 
-        return result.AsSafeCSharpName(prefix);
+        return result.AsSafeCSharpName(keywordPrefix, numberPrefix);
     }
 
     public static string AsSafeClientName(this string value, string prefix = "_")
@@ -38,15 +38,16 @@ internal static class Extensions
                      .AsSafeString(replaceDots: true, replacement: "");
     }
 
-    private static string AsSafeCSharpName(this string value, string prefix)
+    public static string AsSafeCSharpName(this string value, string prefix) => value.AsSafeCSharpName(prefix, prefix);
+    public static string AsSafeCSharpName(this string value, string keywordPrefix, string numberPrefix)
     {
         if (s_keywords.Contains(value))
         {
-            value = prefix + value;
+            value = keywordPrefix + value;
         }
         else if (char.IsNumber(value[0]))
         {
-            value = prefix + value;
+            value = numberPrefix + value;
         }
 
         return value;
@@ -75,7 +76,7 @@ internal static class Extensions
 
     public static IEnumerable<string> AsUniques(this IEnumerable<string> values)
     {
-        HashSet<string> returnedValues = new();
+        HashSet<string> returnedValues = [];
 
         foreach (var value in values)
         {
@@ -93,7 +94,7 @@ internal static class Extensions
 
     public static IEnumerable<(T item, string name)> AsUniques<T>(this IEnumerable<T> values, Func<T, string> get)
     {
-        HashSet<string> returnedValues = new();
+        HashSet<string> returnedValues = [];
 
         foreach (var value in values)
         {
@@ -125,7 +126,8 @@ internal static class Extensions
         return string.Concat(split);
     }
 
-    public static string ResolveType(this string? typeToResolve, System.Text.Json.JsonElement? items = null, SwaggerSchemaPropertyAdditionalProperties? additionalProperties = null)
+    public static string? ResolveType(this string? typeToResolve, System.Text.Json.JsonElement? items = null, SwaggerSchemaPropertyAdditionalProperties? additionalProperties = null) => typeToResolve.ResolveType(true, items, additionalProperties);
+    public static string? ResolveType(this string? typeToResolve, bool fallBack, System.Text.Json.JsonElement? items = null, SwaggerSchemaPropertyAdditionalProperties? additionalProperties = null)
     {
         return typeToResolve switch
         {
@@ -134,13 +136,17 @@ internal static class Extensions
             "boolean" => "bool",
             "int32" or "integer" => "int",
             "int64" => "long",
+            "float" => "float",
+            "double" or "number" => "double",
+            "string" or "json" => "string",
             "uri" => typeof(Uri).FullName!,
             "uuid" => typeof(Guid).FullName!,
             "binary" => typeof(Stream).FullName!,
             "array" => typeof(List<>).FullName![..^2] + "<" + items.ResolveArrayType(additionalProperties) + ">",
             "object" when additionalProperties is not null => $"{typeof(Dictionary<,>).FullName![..^2]}<string, {ResolveType(additionalProperties.type, items, null)}>",
             null => "object",
-            _ => typeToResolve.Replace("#/components/schemas/", "").AsSafeString()
+            _ when fallBack => typeToResolve.Replace("#/components/schemas/", "").AsSafeString(),
+            _ => null
         };
     }
 
@@ -152,8 +158,8 @@ internal static class Extensions
         }
 
         return items.Value.TryGetProperty("type", out var arrayType)
-                    ? ResolveType(arrayType.GetString(), items.Value.TryGetProperty("items", out var innerItems) ? innerItems : null, additionalProperties)
-                    : ResolveType(items.Value.GetProperty("$ref").GetString(), null, additionalProperties);
+                    ? ResolveType(arrayType.GetString(), items.Value.TryGetProperty("items", out var innerItems) ? innerItems : null, additionalProperties)!
+                    : ResolveType(items.Value.GetProperty("$ref").GetString(), null, additionalProperties)!;
     }
 
     private static readonly IEnumerable<string> s_keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

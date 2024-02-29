@@ -22,10 +22,8 @@ internal static class Constants
     private static string GetInformationalVersion() => Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
 
 #if GENERATING_NETSTANDARD
-    public const bool GeneratingNetStandard = true;
     private static readonly Lazy<string> _productVersion = new(() => GetInformationalVersion() + " ( NetStandard )");
 #else
-    public const bool GeneratingNetStandard = false;
     private static readonly Lazy<string> _productVersion = new(GetInformationalVersion);
 #endif
 

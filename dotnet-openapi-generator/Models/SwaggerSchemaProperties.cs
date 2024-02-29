@@ -15,20 +15,20 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         }
     }
 
-    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? exclusion)
+    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas, string? exclusion)
     {
         StringBuilder builder = new();
 
         foreach (var item in Iterate(exclusion))
         {
-            builder.Append('\t').AppendLine(item.Value.GetBody(item.Key, supportRequiredProperties));
+            builder.Append('\t').AppendLine(item.Value.GetBody(item.Key, supportRequiredProperties, jsonPropertyNameAttribute));
         }
 
         builder.AppendLine()
                .Append('\t').AppendLine("System.Collections.Generic.IEnumerable<(string name, object? value)> __ICanIterate.IterateProperties()")
                .Append('\t').AppendLine("{");
 
-        var yields = GetAllYields(allOf, schemas, exclusion).ToHashSet();
+        var yields = GetAllYields(allOf, schemas, exclusion).DistinctBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
 
         if (yields.Count == 0)
         {
@@ -36,14 +36,36 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         }
         else
         {
-            foreach (var item in yields)
+            foreach (var (item, property) in yields)
             {
                 builder.Append('\t').Append('\t')
                        .Append("yield return (\"")
                        .Append(item)
-                       .Append("\", ")
-                       .Append(item[0..1].ToUpperInvariant()).Append(item[1..])
-                       .AppendLine(");");
+                       .Append("\", ");
+
+                var propertyName = item[0..1].ToUpperInvariant() + item[1..];
+                if (char.IsDigit(item[0]))
+                {
+                    propertyName = '_' + propertyName;
+                }
+
+                if (property.@ref is not null)
+                {
+                    if (schemas.TryGenerateFastEnumToString(property.ResolveType()!, propertyName, out var result))
+                    {
+                        builder.Append(result);
+                    }
+                    else
+                    {
+                        builder.Append(propertyName);
+                    }
+                }
+                else
+                {
+                    builder.Append(propertyName);
+                }
+
+                builder.AppendLine(");");
             }
         }
 
@@ -52,7 +74,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         return builder.ToString().TrimEnd();
     }
 
-    private IEnumerable<string> GetAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? discriminatorProperty)
+    private IEnumerable<(string Key, SwaggerSchemaProperty Value)> GetAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? discriminatorProperty)
     {
         if (allOf is not null)
         {
@@ -72,9 +94,9 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
             }
         }
 
-        foreach (var (key, _) in Iterate(discriminatorProperty))
+        foreach (var item in Iterate(discriminatorProperty))
         {
-            yield return key;
+            yield return item;
         }
     }
 }

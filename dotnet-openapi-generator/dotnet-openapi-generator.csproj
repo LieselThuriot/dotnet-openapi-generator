@@ -20,7 +20,7 @@
   -->
   
   <PropertyGroup Condition="'$(openapi-generator-version)' == ''">
-    <openapi-generator-version>7.0</openapi-generator-version>
+    <openapi-generator-version>8.0</openapi-generator-version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(openapi-generator-version-string)' == ''">
@@ -56,6 +56,7 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(openapi-generator-version).0" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="$(openapi-generator-version).0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="YamlDotNet" Version="13.7.1" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -43,6 +43,8 @@ internal static class Logger
         Log(message);
     }
 
+    public static void Break() => Log(NewLine);
+
     public static void BlankLine()
     {
         if (s_canBeFancy)
