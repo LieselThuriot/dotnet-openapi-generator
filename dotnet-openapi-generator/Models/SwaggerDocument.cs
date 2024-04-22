@@ -4,7 +4,7 @@ namespace dotnet.openapi.generator;
 
 #if NET7_0_OR_GREATER
 [System.Text.Json.Serialization.JsonSerializable(typeof(SwaggerDocument))]
-internal partial class SwaggerDocumentTypeInfo : System.Text.Json.Serialization.JsonSerializerContext { }
+internal partial class SwaggerDocumentTypeInfo : System.Text.Json.Serialization.JsonSerializerContext;
 #endif
 
 internal class SwaggerDocument
@@ -58,13 +58,17 @@ internal class SwaggerDocument
         if (options.OAuthType is not OAuthType.None)
         {
             additionalIncludes += @"
-    <PackageReference Include=""IdentityModel"" Version=""[6.*,)"" />";
+    <PackageReference Include=""IdentityModel"" Version=""[7.*,)"" />";
 
             if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
             {
+#if NET8_0_OR_GREATER
+                additionalIncludes += @"
+    <FrameworkReference Include=""Microsoft.AspNetCore.App"" />";
+#else
                 additionalIncludes += @"
     <PackageReference Include=""Microsoft.AspNetCore.Http"" Version=""[2.*,)"" />";
-
+#endif
                 if (options.OAuthType is OAuthType.CachedTokenExchange)
                 {
                     additionalIncludes += $@"
@@ -345,7 +349,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
     private string? GetAccessToken()
     {{
-        if (_httpContext.Request.Headers.TryGetValue(""Authorization"", out var authorizationHeader))
+        if (_httpContextAccessor.HttpContext is not null && _httpContextAccessor.HttpContext.Request.Headers.TryGetValue(""Authorization"", out var authorizationHeader))
         {{
             return authorizationHeader.ToString()[""Bearer "".Length..];
         }}
@@ -366,7 +370,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         }
         else if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
-            var result = "_httpContext = httpContextAccessor.HttpContext;";
+            var result = "_httpContextAccessor = httpContextAccessor;";
 
             if (options.OAuthType is OAuthType.CachedTokenExchange)
             {
@@ -391,7 +395,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         }
         else if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
-            var result = "private readonly Microsoft.AspNetCore.Http.HttpContext _httpContext;";
+            var result = "private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _httpContextAccessor;";
 
             if (options.OAuthType is OAuthType.CachedTokenExchange)
             {
@@ -407,8 +411,5 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         }
     }
 
-    private static Exception NotSupported(Options options)
-    {
-        return new NotSupportedException(options.OAuthType + " is an unsupported value");
-    }
+    private static Exception NotSupported(Options options) => new NotSupportedException(options.OAuthType + " is an unsupported value");
 }

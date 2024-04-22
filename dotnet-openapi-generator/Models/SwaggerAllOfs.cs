@@ -1,5 +1,3 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerAllOfs : List<SwaggerSchemaProperty>
-{
-}
+internal class SwaggerAllOfs : List<SwaggerSchemaProperty>;

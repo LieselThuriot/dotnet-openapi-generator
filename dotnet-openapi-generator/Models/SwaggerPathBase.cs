@@ -1,9 +1,9 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathGet : SwaggerPathBase { }
-internal class SwaggerPathPost : SwaggerPathBase { }
-internal class SwaggerPathPut : SwaggerPathBase { }
-internal class SwaggerPathDelete : SwaggerPathBase { }
+internal class SwaggerPathGet : SwaggerPathBase;
+internal class SwaggerPathPost : SwaggerPathBase;
+internal class SwaggerPathPut : SwaggerPathBase;
+internal class SwaggerPathDelete : SwaggerPathBase;
 
 internal abstract class SwaggerPathBase
 {
