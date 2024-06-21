@@ -28,11 +28,12 @@ internal class SwaggerDocument
         bool includeJsonSourceGenerators = options.IncludeJsonSourceGenerators;
         bool supportRequiredProperties = options.SupportRequiredProperties;
         string? jsonPropertyNameAttribute = options.JsonPropertyNameAttribute;
+        bool includeOptionsDictionary = options.GenerateRequestOptionsDictionary;
 
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();
         string clientModifierValue = options.ClientModifier?.ToString().ToLowerInvariant() ?? modifierValue;
 
-        IEnumerable<string> usedComponents = await paths.Generate(path, @namespace, modifierValue, excludeObsolete, filter, includeInterfaces, clientModifierValue, stringBuilderPoolSize, options.OAuthType, includeJsonSourceGenerators, components.schemas, token);
+        IEnumerable<string> usedComponents = await paths.Generate(path, @namespace, modifierValue, excludeObsolete, filter, includeInterfaces, clientModifierValue, stringBuilderPoolSize, options.OAuthType, includeJsonSourceGenerators, components.schemas, includeOptionsDictionary, token);
 
         await components.Generate(path, @namespace, modifierValue, clientModifierValue, usedComponents, treeShaking, jsonConstructorAttribute, jsonPolymorphicAttribute, jsonDerivedTypeAttribute, jsonPropertyNameAttribute, includeJsonSourceGenerators, supportRequiredProperties, token);
 

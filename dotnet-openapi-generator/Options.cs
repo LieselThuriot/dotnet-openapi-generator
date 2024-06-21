@@ -75,6 +75,9 @@ public class Options
     [Option('a', "additional-document", HelpText = "Location of additional swagger document, used to merge into the main one. Can be both an http location or a local one and can be used multiple times")]
     public IList<string>? AdditionalDocumentLocations { get; set; }
 
+    [Option("include-options-params", Required = false, HelpText = "Generate key value option params on each method to pass to each HttpRequest", Default = false)]
+    public bool GenerateRequestOptionsDictionary { get; set; }
+
     [Option('v', "verbose", Required = false, HelpText = "Verbose logging", Default = false)]
     public bool Verbose { get; set; }
 

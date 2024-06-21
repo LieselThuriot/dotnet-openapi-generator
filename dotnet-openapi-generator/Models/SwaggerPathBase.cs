@@ -16,10 +16,10 @@ internal abstract class SwaggerPathBase
 
     public string? operationId { get; set; }
 
-    public string GetBodySignature(string apiPath, HashSet<string> methodNames, bool excludeObsolete, SwaggerComponentSchemas componentSchemas) => GetBodyInternal(apiPath, methodNames, excludeObsolete, true, componentSchemas);
-    public string GetBody(string apiPath, HashSet<string> methodNames, bool excludeObsolete, SwaggerComponentSchemas componentSchemas) => GetBodyInternal(apiPath, methodNames, excludeObsolete, false, componentSchemas);
+    public string GetBodySignature(string apiPath, HashSet<string> methodNames, bool excludeObsolete, SwaggerComponentSchemas componentSchemas, bool includeOptions) => GetBodyInternal(apiPath, methodNames, excludeObsolete, true, componentSchemas, includeOptions);
+    public string GetBody(string apiPath, HashSet<string> methodNames, bool excludeObsolete, SwaggerComponentSchemas componentSchemas, bool includeOptions) => GetBodyInternal(apiPath, methodNames, excludeObsolete, false, componentSchemas, includeOptions);
 
-    private string GetBodyInternal(string apiPath, HashSet<string> methodNames, bool excludeObsolete, bool signaturesOnly, SwaggerComponentSchemas componentSchemas)
+    private string GetBodyInternal(string apiPath, HashSet<string> methodNames, bool excludeObsolete, bool signaturesOnly, SwaggerComponentSchemas componentSchemas, bool includeOptionsDictionary)
     {
         if (excludeObsolete && deprecated)
         {
@@ -177,7 +177,12 @@ internal abstract class SwaggerPathBase
                 }
             }
 
-            clientCall = $@"        {queryContent}using System.Net.Http.HttpRequestMessage __my_request = new(System.Net.Http.HttpMethod.{operation}, $""{apiPath}"");
+            clientCall = $@"        {queryContent}using System.Net.Http.HttpRequestMessage __my_request = new(System.Net.Http.HttpMethod.{operation}, $""{apiPath}"");{(includeOptionsDictionary ? @"
+        
+        foreach (var (key, value) in options)
+        {
+            System.Collections.Generic.CollectionExtensions.TryAdd(request.Options, key, value);
+        }" : "")}
         {contents}
         __my_request.Content = new System.Net.Http.MultipartFormDataContent
         {{
@@ -189,7 +194,7 @@ internal abstract class SwaggerPathBase
         }
         else
         {
-            clientCall = $@"        {queryContent}var __my_request = await __my_options.CreateRequest(System.Net.Http.HttpMethod.{operation}, {content}, token);{headersToAdd}
+            clientCall = $@"        {queryContent}var __my_request = await __my_options.CreateRequest(System.Net.Http.HttpMethod.{operation}, {content}, token{(includeOptionsDictionary ? ", options" : "")});{headersToAdd}
         return await __my_http_client.SendAsync(__my_request, token);";
         }
 
@@ -251,7 +256,7 @@ internal abstract class SwaggerPathBase
     /// <summary>
     /// {methodSummary}
     /// </summary>{obsolete}
-    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> {name}WithHttpInfoAsync({methodParameterBodies}System.Threading.CancellationToken token = default)"
+    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> {name}WithHttpInfoAsync({methodParameterBodies}System.Threading.CancellationToken token = default{(includeOptionsDictionary ? ", params (string key, object value)[] options" : string.Empty)})"
     + (signaturesOnly
             ? @";
 "
@@ -272,7 +277,7 @@ internal abstract class SwaggerPathBase
     /// <summary>
     /// {methodSummary}
     /// </summary>{obsolete}
-    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task{responseType} {name}Async({methodParameterBodies}System.Threading.CancellationToken token = default)"
+    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task{responseType} {name}Async({methodParameterBodies}System.Threading.CancellationToken token = default{(includeOptionsDictionary ? ", params (string key, object value)[] options" : string.Empty)})"
     + (signaturesOnly
                     ? @";
 "

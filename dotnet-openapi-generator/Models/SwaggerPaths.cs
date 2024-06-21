@@ -6,7 +6,7 @@ namespace dotnet.openapi.generator;
 
 internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 {
-    public async Task<IEnumerable<string>> Generate(string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType oAuthType, bool includeJsonSourceGenerators, SwaggerComponentSchemas componentSchemas, CancellationToken token)
+    public async Task<IEnumerable<string>> Generate(string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType oAuthType, bool includeJsonSourceGenerators, SwaggerComponentSchemas componentSchemas, bool includeOptions, CancellationToken token)
     {
         path = Path.Combine(path, "Clients");
 
@@ -24,9 +24,9 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
             return Enumerable.Empty<string>();
         }
 
-        await GenerateClientOptions(path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, token);
+        await GenerateClientOptions(path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, includeOptions, token);
         await GenerateQueryBuilder(path, @namespace, stringBuilderPoolSize, token);
-        var usedComponents = await GenerateClients(path, @namespace, modifier, excludeObsolete, includeInterfaces, clientModifier, clients, componentSchemas, token);
+        var usedComponents = await GenerateClients(path, @namespace, modifier, excludeObsolete, includeInterfaces, clientModifier, includeOptions, clients, componentSchemas, token);
         await GenerateRegistrations(path, @namespace, modifier, includeInterfaces, clients.Keys, oAuthType, token);
 
         return usedComponents;
@@ -340,7 +340,7 @@ namespace {@namespace};
 ", token);
     }
 
-    private static async Task<IReadOnlyCollection<string>> GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, SwaggerComponentSchemas componentSchemas, CancellationToken token)
+    private static async Task<IReadOnlyCollection<string>> GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, bool includeOptions, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, SwaggerComponentSchemas componentSchemas, CancellationToken token)
     {
         HashSet<string> usedComponents = [];
 
@@ -401,7 +401,7 @@ namespace {@namespace}.Clients;
 
                 foreach (var item in client.Value)
                 {
-                    var body = item.path.GetBody(item.apiPath, methodNames, excludeObsolete, componentSchemas);
+                    var body = item.path.GetBody(item.apiPath, methodNames, excludeObsolete, componentSchemas, includeOptions);
 
                     foreach (var componennt in item.path.GetComponents())
                     {
@@ -421,7 +421,7 @@ namespace {@namespace}.Clients;
 
                 foreach (var item in client.Value)
                 {
-                    var body = item.path.GetBodySignature(item.apiPath, methodNames, excludeObsolete, componentSchemas);
+                    var body = item.path.GetBodySignature(item.apiPath, methodNames, excludeObsolete, componentSchemas, includeOptions);
 
                     foreach (var componennt in item.path.GetComponents())
                     {
@@ -633,7 +633,8 @@ internal static class __StringBuilderPool
 }}", token);
     }
 
-    private static async Task GenerateClientOptions(string path, string @namespace, string modifier, bool includeOAuth, bool includeJsonSourceGenerators, CancellationToken token)
+    private static async Task GenerateClientOptions(string path, string @namespace, string modifier, bool includeOAuth,
+        bool includeJsonSourceGenerators, bool includeOptionsDictionary, CancellationToken token)
     {
         Logger.LogInformational("Generating ClientOptions");
         var staticCtor = $@"
@@ -698,21 +699,32 @@ internal static class __StringBuilderPool
         _options = options;
     }}
 
-    internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest<T>(System.Net.Http.HttpMethod httpMethod, string path, T content, System.Threading.CancellationToken token)
+    internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest<T>(System.Net.Http.HttpMethod httpMethod, string path, T content, System.Threading.CancellationToken token{(includeOptionsDictionary ? ", params (string key, object value)[] options" : string.Empty)})
     {{
         System.Net.Http.HttpRequestMessage request = new(httpMethod, path);
 
         if (content is not null)
         {{
             request.Content = CreateContent(content);
-        }}
+        }}{(includeOptionsDictionary ? @"
+        
+        foreach (var (key, value) in options)
+        {
+            System.Collections.Generic.CollectionExtensions.TryAdd(request.Options, key, value);
+        }" : "")}
 
         return InterceptRequest(request, token);
     }}
 
-    internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest(System.Net.Http.HttpMethod httpMethod, string path, System.Threading.CancellationToken token)
+    internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest(System.Net.Http.HttpMethod httpMethod, string path, System.Threading.CancellationToken token{(includeOptionsDictionary ? ", params (string key, object value)[] options" : string.Empty)})
     {{
-        System.Net.Http.HttpRequestMessage request = new(httpMethod, path);
+        System.Net.Http.HttpRequestMessage request = new(httpMethod, path);{(includeOptionsDictionary ? @"
+        
+        foreach (var (key, value) in options)
+        {
+            System.Collections.Generic.CollectionExtensions.TryAdd(request.Options, key, value);
+        }
+" : "")}
         return InterceptRequest(request, token);
     }}
 
