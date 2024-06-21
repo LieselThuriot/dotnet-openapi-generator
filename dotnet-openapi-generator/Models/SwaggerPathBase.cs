@@ -179,9 +179,11 @@ internal abstract class SwaggerPathBase
 
             clientCall = $@"        {queryContent}using System.Net.Http.HttpRequestMessage __my_request = new(System.Net.Http.HttpMethod.{operation}, $""{apiPath}"");{(includeOptionsDictionary ? @"
         
-        foreach (var (key, value) in options)
-        {
-            System.Collections.Generic.CollectionExtensions.TryAdd(request.Options, key, value);
+        if (options is not null) {
+            foreach (var option in options)
+            {
+                request.Options.Set(new System.Net.Http.HttpRequestOptionsKey<object>(option.Key), option.Value);
+            }
         }" : "")}
         {contents}
         __my_request.Content = new System.Net.Http.MultipartFormDataContent
@@ -194,7 +196,7 @@ internal abstract class SwaggerPathBase
         }
         else
         {
-            clientCall = $@"        {queryContent}var __my_request = await __my_options.CreateRequest(System.Net.Http.HttpMethod.{operation}, {content}, token{(includeOptionsDictionary ? ", options" : "")});{headersToAdd}
+            clientCall = $@"        {queryContent}var __my_request = await __my_options.CreateRequest(System.Net.Http.HttpMethod.{operation}, {content}{(includeOptionsDictionary ? ", options" : "")}, token);{headersToAdd}
         return await __my_http_client.SendAsync(__my_request, token);";
         }
 
@@ -256,7 +258,7 @@ internal abstract class SwaggerPathBase
     /// <summary>
     /// {methodSummary}
     /// </summary>{obsolete}
-    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> {name}WithHttpInfoAsync({methodParameterBodies}System.Threading.CancellationToken token = default{(includeOptionsDictionary ? ", params (string key, object value)[] options" : string.Empty)})"
+    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> {name}WithHttpInfoAsync({methodParameterBodies}{(includeOptionsDictionary ? "System.Collections.Generic.IDictionary<string, object>? options = null, " : string.Empty)}System.Threading.CancellationToken token = default)"
     + (signaturesOnly
             ? @";
 "
@@ -277,13 +279,13 @@ internal abstract class SwaggerPathBase
     /// <summary>
     /// {methodSummary}
     /// </summary>{obsolete}
-    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task{responseType} {name}Async({methodParameterBodies}System.Threading.CancellationToken token = default{(includeOptionsDictionary ? ", params (string key, object value)[] options" : string.Empty)})"
+    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task{responseType} {name}Async({methodParameterBodies}{(includeOptionsDictionary ? "System.Collections.Generic.IDictionary<string, object>? options = null, " : string.Empty)}System.Threading.CancellationToken token = default)"
     + (signaturesOnly
                     ? @";
 "
 : $@"
     {{
-        var __result = await {name}WithHttpInfoAsync({passThroughParams}token);
+        var __result = await {name}WithHttpInfoAsync({passThroughParams}{(includeOptionsDictionary ? "options, " : string.Empty)}token);
         await __my_options.InterceptResponse(__result, token);
         return await {(responseType == "<System.IO.Stream?>" ? "__result.Content.ReadAsStreamAsync(token)" : $"__my_options.DeSerializeContent{responseType}(__result, token)")};
     }}
@@ -305,13 +307,13 @@ internal abstract class SwaggerPathBase
     /// <summary>
     /// {methodSummary}
     /// </summary>{obsolete}
-    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task {name}Async({methodParameterBodies}System.Threading.CancellationToken token = default)"
+    public {(signaturesOnly ? "" : "async ")}System.Threading.Tasks.Task {name}Async({methodParameterBodies}{(includeOptionsDictionary ? "System.Collections.Generic.IDictionary<string, object>? options = null, " : string.Empty)}System.Threading.CancellationToken token = default)"
     + (signaturesOnly
     ? @";
 "
     : $@"
     {{
-        var __result = await {name}WithHttpInfoAsync({passThroughParams}token);
+        var __result = await {name}WithHttpInfoAsync({passThroughParams}{(includeOptionsDictionary ? "options, " : string.Empty)}token);
         await __my_options.InterceptResponse(__result, token);
     }}
 ");

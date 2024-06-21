@@ -699,7 +699,7 @@ internal static class __StringBuilderPool
         _options = options;
     }}
 
-    internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest<T>(System.Net.Http.HttpMethod httpMethod, string path, T content, System.Threading.CancellationToken token{(includeOptionsDictionary ? ", params (string key, object value)[] options" : string.Empty)})
+    internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest<T>(System.Net.Http.HttpMethod httpMethod, string path, T content{(includeOptionsDictionary ? ", System.Collections.Generic.IDictionary<string, object>? options" : string.Empty)}, System.Threading.CancellationToken token)
     {{
         System.Net.Http.HttpRequestMessage request = new(httpMethod, path);
 
@@ -708,21 +708,25 @@ internal static class __StringBuilderPool
             request.Content = CreateContent(content);
         }}{(includeOptionsDictionary ? @"
         
-        foreach (var (key, value) in options)
-        {
-            System.Collections.Generic.CollectionExtensions.TryAdd(request.Options, key, value);
+        if (options is not null) {
+            foreach (var option in options)
+            {
+                request.Options.Set(new System.Net.Http.HttpRequestOptionsKey<object>(option.Key), option.Value);
+            }
         }" : "")}
 
         return InterceptRequest(request, token);
     }}
 
-    internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest(System.Net.Http.HttpMethod httpMethod, string path, System.Threading.CancellationToken token{(includeOptionsDictionary ? ", params (string key, object value)[] options" : string.Empty)})
+    internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest(System.Net.Http.HttpMethod httpMethod, string path{(includeOptionsDictionary ? ", System.Collections.Generic.IDictionary<string, object>? options" : string.Empty)}, System.Threading.CancellationToken token)
     {{
         System.Net.Http.HttpRequestMessage request = new(httpMethod, path);{(includeOptionsDictionary ? @"
         
-        foreach (var (key, value) in options)
-        {
-            System.Collections.Generic.CollectionExtensions.TryAdd(request.Options, key, value);
+        if (options is not null) {
+            foreach (var option in options)
+            {
+                request.Options.Set(new System.Net.Http.HttpRequestOptionsKey<object>(option.Key), option.Value);
+            }
         }
 " : "")}
         return InterceptRequest(request, token);
