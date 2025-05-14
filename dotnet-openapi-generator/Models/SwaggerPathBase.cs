@@ -49,10 +49,10 @@ internal abstract class SwaggerPathBase
             }
         }
 
-        var methodParameters = (parameters ?? Enumerable.Empty<SwaggerPathParameter>())
-                                                    .OrderBy(x => x.required ? 0 : 1)
-                                                    .ThenBy(x => x.@in == "path" ? 0 : 1)
-                                                    .ToList();
+        var methodParameters = (parameters ?? [])
+                                           .OrderBy(x => x.required ? 0 : 1)
+                                           .ThenBy(x => x.@in == "path" ? 0 : 1)
+                                           .ToList();
 
         var methodParameterBodies = string.Join(", ", methodParameters.Select(x => x.GetBody()));
 
@@ -61,7 +61,7 @@ internal abstract class SwaggerPathBase
             methodParameterBodies += ", ";
         }
 
-        var queryParams = (parameters ?? Enumerable.Empty<SwaggerPathParameter>()).Where(x => x.@in == "query").ToList();
+        var queryParams = (parameters ?? []).Where(x => x.@in == "query").ToList();
 
         var queryContent = "";
         if (queryParams.Count > 0)
@@ -82,7 +82,7 @@ internal abstract class SwaggerPathBase
             }
         }
 
-        var headerParams = (parameters ?? Enumerable.Empty<SwaggerPathParameter>()).Where(x => x.@in == "header").ToList();
+        var headerParams = (parameters ?? []).Where(x => x.@in == "header").ToList();
 
         string headersToAdd = "";
         if (headerParams.Count > 0)

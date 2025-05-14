@@ -25,24 +25,14 @@ dotnet tool install dotnet-openapi-generator -g --version 2.0.0-preview.16
 dotnet tool install dotnet-openapi-generator -g --version 2.1.0-preview.16
 ```
 
-### dotnet 5.0 generator installation
-```bash
-dotnet tool install dotnet-openapi-generator -g --version 5.0.0-preview.16
-```
-
-### dotnet 6.0 generator installation
-```bash
-dotnet tool install dotnet-openapi-generator -g --version 6.0.0-preview.16
-```
-
-### dotnet 7.0 generator installation
-```bash
-dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.16
-```
-
 ### dotnet 8.0 generator installation
 ```bash
 dotnet tool install dotnet-openapi-generator -g --version 8.0.0-preview.16
+```
+
+### dotnet 9.0 generator installation
+```bash
+dotnet tool install dotnet-openapi-generator -g --version 9.0.0-preview.16
 ```
 
 
@@ -50,8 +40,8 @@ dotnet tool install dotnet-openapi-generator -g --version 8.0.0-preview.16
 
 ```bash
 C:\Git > dotnet openapi-generator --help
-dotnet-openapi-generator 8.0.0-preview.16
-Steven Thuriot
+dotnet-openapi-generator 9.0.0-preview.16
+Liesel Thuriot
 
   -n, --namespace                    (Default: Project name) The namespace used for the generated files
 

@@ -21,7 +21,7 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
         if (clients.Count == 0)
         {
             Logger.LogWarning("No clients found to generate");
-            return Enumerable.Empty<string>();
+            return [];
         }
 
         await GenerateClientOptions(path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, includeOptions, token);

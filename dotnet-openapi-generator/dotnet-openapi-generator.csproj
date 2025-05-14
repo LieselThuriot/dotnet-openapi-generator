@@ -11,16 +11,16 @@
 	</PropertyGroup>
 
   <!--Testing-->
-  <!--
-  <PropertyGroup>
+  
+  <!--<PropertyGroup>
     <openapi-generator-netstandard>2.0</openapi-generator-netstandard>
-    <openapi-generator-version>6.0</openapi-generator-version>
+    <openapi-generator-version>9.0</openapi-generator-version>
     <openapi-generator-version-string>2.0-preview.11</openapi-generator-version-string>
-  </PropertyGroup>
-  -->
+  </PropertyGroup>-->
+  
   
   <PropertyGroup Condition="'$(openapi-generator-version)' == ''">
-    <openapi-generator-version>8.0</openapi-generator-version>
+    <openapi-generator-version>9.0</openapi-generator-version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(openapi-generator-version-string)' == ''">
@@ -34,7 +34,7 @@
 	<PropertyGroup>
 		<TargetFramework>net$(openapi-generator-version)</TargetFramework>
 		<Version>$(openapi-generator-version-string)</Version>
-		<Authors>Steven Thuriot</Authors>
+		<Authors>Liesel Thuriot</Authors>
 		<Copyright>$(Authors)</Copyright>
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>dotnet-openapi-generator</ToolCommandName>
@@ -43,7 +43,7 @@
 		<Product>OpenApi Generator</Product>
 		<Title>$(Product)</Title>
 		<Description>Generate C# code based on swagger documents</Description>
-		<RepositoryUrl>https://github.com/StevenThuriot/dotnet-openapi-generator</RepositoryUrl>
+		<RepositoryUrl>https://github.com/LieselThuriot/dotnet-openapi-generator</RepositoryUrl>
 		<PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
 		<PackageTags>swagger;generation;generator;openapi;csharp</PackageTags>
 		<PackageIcon>openapi.png</PackageIcon>
@@ -53,10 +53,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="CommandLineParser" Version="2.9.1" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="$(openapi-generator-version).0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.5" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="YamlDotNet" Version="15.1.2" />
+		<PackageReference Include="YamlDotNet" Version="16.3.0" />
 	</ItemGroup>
 
 	<ItemGroup>
