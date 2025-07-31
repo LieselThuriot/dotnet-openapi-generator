@@ -11,6 +11,7 @@ internal class SwaggerSchemaProperty
     public object? @default { get; set; }
     public bool nullable { get; set; }
     //public bool? required { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(BooleanOrObjectConverter<SwaggerSchemaPropertyAdditionalProperties>))]
     public SwaggerSchemaPropertyAdditionalProperties? additionalProperties { get; set; }
     public System.Text.Json.JsonElement? items { get; set; }
 

@@ -4,8 +4,8 @@ namespace dotnet.openapi.generator;
 
 internal static partial class Regexes
 {
-    [GeneratedRegex(@"[`\[\], \+\/\\\{\}\-]", RegexOptions.Compiled, 1000)] public static partial Regex SafeString();
-    [GeneratedRegex(@"[`\[\], \+\/\\\{\}\-\.]", RegexOptions.Compiled, 1000)] public static partial Regex SafeStringWithoutDots();
+    [GeneratedRegex(@"[`\[\], \+\/\\\{\}\-\<\>]", RegexOptions.Compiled, 1000)] public static partial Regex SafeString();
+    [GeneratedRegex(@"[`\[\], \+\/\\\{\}\-\<\>\.]", RegexOptions.Compiled, 1000)] public static partial Regex SafeStringWithoutDots();
     [GeneratedRegex(@"_{2,}", RegexOptions.Compiled, 1000)] public static partial Regex MultiUnderscore();
     [GeneratedRegex(@"^(?<genericType>.+)`\d+(?<typeinfo>\[\[(?<type>.+?), .+?, Version=\d+.\d+.\d+.\d+, Culture=.+?, PublicKeyToken=.+?\]\])$", RegexOptions.Compiled, 1000)] public static partial Regex FullnameType();
     [GeneratedRegex(@"(System\.Collections\.Generic\.List<|System\.Collections\.Generic\.Dictionary<string, )(?<actualComponent>\w+)>", RegexOptions.Compiled, 1000)] public static partial Regex FindActualComponent();

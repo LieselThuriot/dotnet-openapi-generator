@@ -58,22 +58,28 @@ internal class SwaggerDocument
 
         if (options.OAuthType is not OAuthType.None)
         {
-            additionalIncludes += @"
-    <PackageReference Include=""IdentityModel"" Version=""[7.*,)"" />";
+            additionalIncludes += """
+
+    <PackageReference Include="IdentityModel" Version="[7.*,)" />
+""";
 
             if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
             {
 #if NET8_0_OR_GREATER
-                additionalIncludes += @"
-    <FrameworkReference Include=""Microsoft.AspNetCore.App"" />";
+                additionalIncludes += """
+
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+""";
 #else
                 additionalIncludes += @"
     <PackageReference Include=""Microsoft.AspNetCore.Http"" Version=""[2.*,)"" />";
 #endif
                 if (options.OAuthType is OAuthType.CachedTokenExchange)
                 {
-                    additionalIncludes += $@"
-    <PackageReference Include=""Microsoft.Extensions.Caching.Memory"" Version=""[{netVersion.Major}.*,)"" />";
+                    additionalIncludes += $"""
+
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="[{netVersion.Major}.*,)" />
+""";
                 }
             }
         }
@@ -87,7 +93,8 @@ internal class SwaggerDocument
         }
 #endif
 
-        return File.WriteAllTextAsync(file, @$"<Project Sdk=""Microsoft.NET.Sdk"">
+        return File.WriteAllTextAsync(file, $"""
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net{targetframework}{netVersion.Major}.{netVersion.Minor}</TargetFramework>
@@ -95,11 +102,12 @@ internal class SwaggerDocument
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.Extensions.Http"" Version=""[{netVersion.Major}.*,)"" />{additionalIncludes}
+    <PackageReference Include="Microsoft.Extensions.Http" Version="[{netVersion.Major}.*,)" />{additionalIncludes}
   </ItemGroup>
 
 </Project>
-", cancellationToken: token);
+
+""", cancellationToken: token);
     }
 
     public Task GenerateOAuth(Options options, CancellationToken token = default)
@@ -118,134 +126,138 @@ internal class SwaggerDocument
             {
                 additionalCtorParameters += ", ITokenCache tokenCache";
 
-                additionalHelpers += $@"
+                additionalHelpers += $$"""
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
-{modifierValue} interface ITokenCache
-{{
+
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
+{{modifierValue}} interface ITokenCache
+{
     System.Threading.Tasks.Task<ApiAccessToken> GetOrCreateAsync(string currentToken, System.Func<System.Threading.Tasks.Task<ApiAccessToken>> factory);
-}}
+}
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal class __TokenCache : ITokenCache
-{{
+{
     private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _tokenCache;
 
     public __TokenCache(Microsoft.Extensions.Caching.Memory.IMemoryCache tokenCache)
-    {{
+    {
         _tokenCache = tokenCache;
-    }}
+    }
 
     public System.Threading.Tasks.Task<ApiAccessToken> GetOrCreateAsync(string currentToken, System.Func<System.Threading.Tasks.Task<ApiAccessToken>> factory)
-    {{
-        return Microsoft.Extensions.Caching.Memory.CacheExtensions.GetOrCreateAsync(_tokenCache, ""{options.Namespace}.TokenExchange."" + currentToken, async entry =>
-        {{
+    {
+        return Microsoft.Extensions.Caching.Memory.CacheExtensions.GetOrCreateAsync(_tokenCache, "{{options.Namespace}}.TokenExchange." + currentToken, async entry =>
+        {
             var result = await factory();
             entry.AbsoluteExpirationRelativeToNow = result.GetExpiration();
             return result;
-        }})!;
-    }}
-}}";
+        })!;
+    }
+}
+""";
             }
         }
 
-        return File.WriteAllTextAsync(file, Constants.Header + $@"namespace {options.Namespace}.Clients;{additionalHelpers}
+        return File.WriteAllTextAsync(file, Constants.Header + $$"""
+namespace {{options.Namespace}}.Clients;{{additionalHelpers}}
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-internal sealed class __{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache
-{{
+internal sealed class __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryCache
+{
     private readonly IdentityModel.Client.DiscoveryCache _cache;
 
-    public __{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache(string authorityUrl, System.Net.Http.IHttpClientFactory factory)
-    {{
+    public __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryCache(string authorityUrl, System.Net.Http.IHttpClientFactory factory)
+    {
         _cache  = new(authorityUrl, () => factory.CreateClient(Registrations.__ClientNames.DiscoveryCache));
-    }}
+    }
 
     public System.Threading.Tasks.Task<IdentityModel.Client.DiscoveryDocumentResponse> GetAsync() => _cache.GetAsync();
-}}
+}
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 public interface ITokenRequestClient
-{{
+{
     System.Threading.Tasks.Task<ApiAccessToken> GetTokenAsync(System.Threading.CancellationToken cancellationToken = default);
-}}
+}
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal sealed class __TokenRequestClient : ITokenRequestClient
-{{
-    private readonly __{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache _discoveryCache;
+{
+    private readonly __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryCache _discoveryCache;
     private readonly System.Net.Http.IHttpClientFactory _httpClientFactory;
     private readonly TokenOptions _tokenOptions;
-    {GenerateFieldsBasedOnType(options)}
+    {{GenerateFieldsBasedOnType(options)}}
 
-    public __TokenRequestClient(__{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache discoveryCache, System.Net.Http.IHttpClientFactory httpClientFactory, TokenOptions tokenOptions{additionalCtorParameters})
-    {{
+    public __TokenRequestClient(__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryCache discoveryCache, System.Net.Http.IHttpClientFactory httpClientFactory, TokenOptions tokenOptions{{additionalCtorParameters}})
+    {
         _discoveryCache = discoveryCache;
         _httpClientFactory = httpClientFactory;
         _tokenOptions = tokenOptions;
-        {GeneratorCtorFieldsBasedOnType(options)}
-    }}
+        {{GeneratorCtorFieldsBasedOnType(options)}}
+    }
 
     public System.Threading.Tasks.Task<ApiAccessToken> GetTokenAsync(System.Threading.CancellationToken cancellationToken)
-    {{
-        {GenerateGetTokenBodyBasedOnType(options)}
-    }}
+    {
+        {{GenerateGetTokenBodyBasedOnType(options)}}
+    }
 
     private System.Exception CouldNotGetToken(IdentityModel.Client.TokenResponse response)
-    {{
+    {
         if (response.ErrorType == IdentityModel.Client.ResponseErrorType.Exception)
-        {{
-            return response.Exception ?? new(response.Error ?? ""Unknown Error"");
-        }}
+        {
+            return response.Exception ?? new(response.Error ?? "Unknown Error");
+        }
 
-        return new System.Exception(""Could not request token"");
-    }}
-}}
+        return new System.Exception("Could not request token");
+    }
+}
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-{modifierValue} sealed class TokenOptions
-{{
-    public TokenOptions(System.Uri authorityUrl, string clientId, string clientSecret, string scopes = """")
-    {{
+{{modifierValue}} sealed class TokenOptions
+{
+    public TokenOptions(System.Uri authorityUrl, string clientId, string clientSecret, string scopes = "")
+    {
         AuthorityUrl = authorityUrl ?? throw new System.ArgumentNullException(nameof(authorityUrl));
         ClientId = clientId ?? throw new System.ArgumentNullException(nameof(clientId));
         ClientSecret = clientSecret ?? throw new System.ArgumentNullException(nameof(clientSecret));
-        Scopes = scopes ?? """";
-    }}
+        Scopes = scopes ?? "";
+    }
 
-    public System.Uri AuthorityUrl {{ get; }}
-    public string ClientId {{ get; }}
-    public string ClientSecret {{ get; }}
-    public string Scopes {{ get; }}
-}}
+    public System.Uri AuthorityUrl { get; }
+    public string ClientId { get; }
+    public string ClientSecret { get; }
+    public string Scopes { get; }
+}
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-{modifierValue} sealed class ApiAccessToken
-{{
+{{modifierValue}} sealed class ApiAccessToken
+{
     public ApiAccessToken(string accessToken, string tokenType, int expiresIn)
-    {{
+    {
         AccessToken = accessToken;
         TokenType = tokenType;
         ExpiresIn = expiresIn;
         Creation = System.DateTime.UtcNow;
-    }}
+    }
 
     public static implicit operator ApiAccessToken(IdentityModel.Client.TokenResponse response) => new(response.AccessToken!, response.TokenType!, response.ExpiresIn);
     public static implicit operator System.Net.Http.Headers.AuthenticationHeaderValue(ApiAccessToken token) => new(token.TokenType, token.AccessToken);
 
-    public string AccessToken {{ get; }}
-    public string TokenType {{ get; }}
-    public int ExpiresIn {{ get; }}
-    public System.DateTime Creation {{ get; }}
+    public string AccessToken { get; }
+    public string TokenType { get; }
+    public int ExpiresIn { get; }
+    public System.DateTime Creation { get; }
 
     public bool IsValid() => (Creation + GetExpiration()) > System.DateTime.UtcNow;
     public System.TimeSpan GetExpiration() => System.TimeSpan.FromSeconds(ExpiresIn) - System.TimeSpan.FromMinutes(1);
-}}", cancellationToken: token);
+}
+""", cancellationToken: token);
     }
 
     private static string GenerateGetTokenBodyBasedOnType(Options options)
@@ -308,54 +320,56 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         }
         else if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
-            return $@"string? currentToken = GetAccessToken();
+            return $$"""
+string? currentToken = GetAccessToken();
 
         if (currentToken is null)
-        {{
-            return System.Threading.Tasks.Task.FromException<ApiAccessToken>(new(""Current token not found""));
-        }}
+        {
+            return System.Threading.Tasks.Task.FromException<ApiAccessToken>(new("Current token not found"));
+        }
 
-        {(options.OAuthType is OAuthType.CachedTokenExchange
+        {{(options.OAuthType is OAuthType.CachedTokenExchange
         ? "return _tokenCache.GetOrCreateAsync(currentToken, () => Exchange(currentToken, cancellationToken));"
-        : "return Exchange(currentToken, cancellationToken);")}
-    }}
+        : "return Exchange(currentToken, cancellationToken);")}}
+    }
 
     private async System.Threading.Tasks.Task<ApiAccessToken> Exchange(string currentToken, System.Threading.CancellationToken cancellationToken)
-    {{
+    {
         var discoveryDocumentResponse = await _discoveryCache.GetAsync();
 
         var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient), new IdentityModel.Client.TokenClientOptions
-        {{
+        {
             Address = discoveryDocumentResponse.TokenEndpoint!,
             ClientId = _tokenOptions.ClientId,
             ClientSecret = _tokenOptions.ClientSecret,
-            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle},
+            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{{options.ClientCredentialStyle}},
             Parameters = new()
-            {{
-                {{ IdentityModel.OidcConstants.TokenRequest.SubjectTokenType, IdentityModel.OidcConstants.TokenTypeIdentifiers.AccessToken }},
-                {{ IdentityModel.OidcConstants.TokenRequest.SubjectToken, currentToken }},
-                {{ IdentityModel.OidcConstants.TokenRequest.Scope, _tokenOptions.Scopes }}
-            }}
-        }});
+            {
+                { IdentityModel.OidcConstants.TokenRequest.SubjectTokenType, IdentityModel.OidcConstants.TokenTypeIdentifiers.AccessToken },
+                { IdentityModel.OidcConstants.TokenRequest.SubjectToken, currentToken },
+                { IdentityModel.OidcConstants.TokenRequest.Scope, _tokenOptions.Scopes }
+            }
+        });
 
         var response = await tokenClient.RequestTokenAsync(IdentityModel.OidcConstants.GrantTypes.TokenExchange, cancellationToken: cancellationToken);
 
         if (response.ErrorType != IdentityModel.Client.ResponseErrorType.None)
-        {{
+        {
             throw CouldNotGetToken(response);
-        }}
+        }
 
         return response;
-    }}
+    }
 
     private string? GetAccessToken()
-    {{
-        if (_httpContextAccessor.HttpContext is not null && _httpContextAccessor.HttpContext.Request.Headers.TryGetValue(""Authorization"", out var authorizationHeader))
-        {{
-            return authorizationHeader.ToString()[""Bearer "".Length..];
-        }}
+    {
+        if (_httpContextAccessor.HttpContext is not null && _httpContextAccessor.HttpContext.Request.Headers.TryGetValue("Authorization", out var authorizationHeader))
+        {
+            return authorizationHeader.ToString()["Bearer ".Length..];
+        }
 
-        return null;";
+        return null;
+""";
         }
         else
         {

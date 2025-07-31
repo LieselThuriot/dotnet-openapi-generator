@@ -40,7 +40,7 @@ internal class SwaggerComponents
             Logger.LogInformational("Generating Json Source Generators");
 
             var attributes = schemasToGenerate.Keys.Select(x => x.AsSafeString())
-                                              .OrderBy(x => x)
+                                              .Order()
                                               .Select(x => $"[System.Text.Json.Serialization.JsonSerializable(typeof({x}))]")
                                               .ToHashSet();
 
@@ -69,8 +69,8 @@ namespace {@namespace}.Clients;
         s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     }}"
 #endif
-        + $@"
-}}";
+        + @"
+}";
 
                 await File.WriteAllTextAsync(Path.Combine(path, "../Clients/__JsonSerializerContext.cs"), template, token);
             }
@@ -79,13 +79,15 @@ namespace {@namespace}.Clients;
 
     private static async Task GenerateInternals(string path, string @namespace, CancellationToken token)
     {
-        await File.WriteAllTextAsync(Path.Combine(path, "__ICanIterate.cs"), Constants.Header + $@"namespace {@namespace}.Models;
+        await File.WriteAllTextAsync(Path.Combine(path, "__ICanIterate.cs"), Constants.Header + $$"""
+namespace {{@namespace}}.Models;
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 internal interface __ICanIterate
-{{
+{
     System.Collections.Generic.IEnumerable<(string name, object? value)> IterateProperties();
-}}", token);
+}
+""", token);
     }
 
     private static void ShakeTree(IEnumerable<string> usedComponents, Dictionary<string, SwaggerSchema> schemas)

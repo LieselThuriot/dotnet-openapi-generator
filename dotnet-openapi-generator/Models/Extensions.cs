@@ -43,11 +43,11 @@ internal static class Extensions
     {
         if (s_keywords.Contains(value))
         {
-            value = keywordPrefix + value;
+            return keywordPrefix + value;
         }
         else if (char.IsNumber(value[0]))
         {
-            value = numberPrefix + value;
+            return numberPrefix + value;
         }
 
         return value;
@@ -152,14 +152,19 @@ internal static class Extensions
 
     public static string ResolveArrayType(this JsonElement? items, SwaggerSchemaPropertyAdditionalProperties? additionalProperties)
     {
-        if (items is null)
+        if (items is not null)
         {
-            return "object";
+            if (items.Value.TryGetProperty("type", out var arrayType))
+            {
+                return ResolveType(arrayType.GetString(), items.Value.TryGetProperty("items", out var innerItems) ? innerItems : null, additionalProperties)!;
+            }
+            else if (items.Value.TryGetProperty("$ref", out var refProperty))
+            {
+                return ResolveType(refProperty.GetString(), null, additionalProperties)!;
+            }
         }
 
-        return items.Value.TryGetProperty("type", out var arrayType)
-                    ? ResolveType(arrayType.GetString(), items.Value.TryGetProperty("items", out var innerItems) ? innerItems : null, additionalProperties)!
-                    : ResolveType(items.Value.GetProperty("$ref").GetString(), null, additionalProperties)!;
+        return "object";
     }
 
     private static readonly IEnumerable<string> s_keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

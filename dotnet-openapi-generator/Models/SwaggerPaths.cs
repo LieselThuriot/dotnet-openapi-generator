@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
 
 namespace dotnet.openapi.generator;
 
@@ -71,11 +70,11 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
     {
         Logger.LogInformational("Generating Registrations");
 
-        var clientNames = clients.OrderBy(x => x)
+        var clientNames = clients.Order()
                                  .Select(x => $"        public const string {x} = \"{@namespace.AsSafeString(replaceDots: true, replacement: "")}{x}Client\";")
                                  .Aggregate((current, next) => current + Environment.NewLine + next);
 
-        var addHttpClientRegistrations = clients.OrderBy(x => x)
+        var addHttpClientRegistrations = clients.Order()
                                                 .Select(x => $"        Register<{GetClientGeneric(x)}>(__ClientNames.{x});")
                                                 .Aggregate((current, next) => current + Environment.NewLine + next);
 

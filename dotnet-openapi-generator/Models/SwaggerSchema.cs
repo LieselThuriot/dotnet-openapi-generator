@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace dotnet.openapi.generator;
+﻿namespace dotnet.openapi.generator;
 
 internal class SwaggerSchema
 {
@@ -34,7 +32,7 @@ internal class SwaggerSchema
         return "class";
     }
 
-    private bool IsTopLevel(string name, IEnumerable<SwaggerSchema> schemas)
+    private static bool IsTopLevel(string name, IEnumerable<SwaggerSchema> schemas)
     {
         foreach (var schema in schemas)
         {
@@ -124,7 +122,7 @@ internal class SwaggerSchema
 ";
     }
 
-    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties() => IterateProperties()?.Where(x => !x.Value.nullable /*|| x.Value.required.GetValueOrDefault()*/).ToHashSet() ?? new(0);
+    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties() => IterateProperties()?.Where(x => !x.Value.nullable /*|| x.Value.required.GetValueOrDefault()*/).ToHashSet() ?? [];
 
     private string GetInheritance()
     {
@@ -145,6 +143,8 @@ internal class SwaggerSchema
         {
             toImplement.Add("__ICanIterate");
         }
+
+        toImplement.Remove("object");
 
         if (toImplement.Count > 0)
         {
@@ -183,20 +183,22 @@ internal class SwaggerSchema
             }
         }
 
-        var template = Constants.Header + $@"namespace {@namespace}.Models;
+        var template = Constants.Header + $$"""
+namespace {{@namespace}}.Models;
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]{attributes}
-{(@enum is null
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]{{attributes}}
+{{(@enum is null
     ? "[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]" + Environment.NewLine
     : (flaggedEnum is not null
         ? "[System.Flags]" + Environment.NewLine
         : "")
         + "[System.Text.Json.Serialization.JsonConverter(typeof("+name+@"EnumConverter))]
-")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
-{{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}
-{GetBody(name, supportRequiredProperties, jsonPropertyNameAttribute, schemas, modifier)}
-}}
-";
+")}}{{modifier}} {{GetDefinitionType(name, schemas.Values)}} {{name}}{{GetInheritance()}}
+{{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}}
+{{GetBody(name, supportRequiredProperties, jsonPropertyNameAttribute, schemas, modifier)}}
+}
+
+""";
         return File.WriteAllTextAsync(fileName, template, token);
     }
 
@@ -206,9 +208,9 @@ internal class SwaggerSchema
         {
             if (properties is not null)
             {
-                foreach (var property in IterateProperties()!)
+                foreach (var (key, value) in IterateProperties()!)
                 {
-                    foreach (var component in property.Value.GetComponents(schemas, depth))
+                    foreach (var component in value.GetComponents(schemas, depth))
                     {
                         yield return component;
                     }

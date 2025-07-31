@@ -15,4 +15,8 @@ internal static class Compatibility
         }
     }
 #endif
+
+#if !NET9_0_OR_GREATER
+    public static IOrderedEnumerable<T> Order<T>(this IEnumerable<T> source) => source.OrderBy(x => x);
+#endif
 }
