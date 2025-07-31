@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Xml;
 
 namespace dotnet.openapi.generator;
 
@@ -139,6 +138,11 @@ internal class SwaggerSchemaEnum : List<object>
             .AppendLine("{")
             .Append("    public override ").Append(enumName).AppendLine(" Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options)")
             .AppendLine("    {")
+            .AppendLine("       if (reader.TokenType is System.Text.Json.JsonTokenType.Number)")
+            .AppendLine("       {")
+            .Append("           return (").Append(enumName).AppendLine(") reader.GetInt32();")
+            .AppendLine("       }")
+            .AppendLine()
             .Append("        return ").Append(enumName).AppendLine("FastEnum.FromString(reader.GetString());")
             .AppendLine("    }")
             .AppendLine()
