@@ -51,7 +51,7 @@ internal abstract class SwaggerPathBase
 
         var methodParameters = (parameters ?? [])
                                            .OrderBy(x => x.required ? 0 : 1)
-                                           .ThenBy(x => x.@in == "path" ? 0 : 1)
+                                           .ThenBy(x => x.@in is "path" ? 0 : 1)
                                            .ToList();
 
         string methodParameterBodies = string.Join(", ", methodParameters.Select(x => x.GetBody()));
@@ -61,13 +61,13 @@ internal abstract class SwaggerPathBase
             methodParameterBodies += ", ";
         }
 
-        var queryParams = (parameters ?? []).Where(x => x.@in == "query").ToList();
+        var queryParams = (parameters ?? []).Where(x => x.@in is "query").ToList();
 
         string queryContent = "";
         if (queryParams.Count > 0)
         {
             queryContent += "__QueryBuilder __my_queryBuilder = new();" + Environment.NewLine + string.Concat(queryParams.Select(x => $"        __my_queryBuilder.AddParameter({GenerateParameterSyntax(x)}, \"{x.name.TrimStart('@')}\");" + Environment.NewLine)) + Environment.NewLine + "        ";
-            apiPath += "{__my_queryBuilder}";
+            apiPath += "{__my_queryBuilder.ToString()}";
 
             string GenerateParameterSyntax(SwaggerPathParameter x)
             {
@@ -82,7 +82,7 @@ internal abstract class SwaggerPathBase
             }
         }
 
-        var headerParams = (parameters ?? []).Where(x => x.@in == "header").ToList();
+        var headerParams = (parameters ?? []).Where(x => x.@in is "header").ToList();
 
         string headersToAdd = "";
         if (headerParams.Count > 0)
@@ -152,16 +152,18 @@ internal abstract class SwaggerPathBase
                                             .AsUniques(x => "@" + x[0..1].ToLowerInvariant() + x[1..]))
             {
                 string paramName = x.name;
-                string paramContentName = string.Concat("__", paramName.AsSpan(1));
+                string paramContentName = $"__{paramName.AsSpan(1)}";
                 contentNames.Add(paramContentName);
 
                 if (x.item == typeof(Stream).FullName)
                 {
-                    contents += $@"
+                    contents += $"""
+
         using System.Net.Http.StreamContent {paramContentName} = new({paramName});
-        {paramContentName}.Headers.Add(""Content-Disposition"", ""form-data; name=\""formFile\"""");
-        {paramContentName}.Headers.Add(""Content-Type"", System.Net.Mime.MediaTypeNames.Text.Plain);
-";
+        {paramContentName}.Headers.Add("Content-Disposition", "form-data; name=\"formFile\"");
+        {paramContentName}.Headers.Add("Content-Type", System.Net.Mime.MediaTypeNames.Text.Plain);
+
+""";
                 }
                 else if (paramName.StartsWith("@system_IO_Stream"))
                 {
@@ -179,10 +181,11 @@ internal abstract class SwaggerPathBase
 
             clientCall = $@"        {queryContent}using System.Net.Http.HttpRequestMessage __my_request = new(System.Net.Http.HttpMethod.{operation}, $""{apiPath}"");{(includeOptionsDictionary ? @"
         
-        if (options is not null) {
+        if (options is not null)
+        {
             foreach (var option in options)
             {
-                request.Options.Set(new System.Net.Http.HttpRequestOptionsKey<object>(option.Key), option.Value);
+                __my_request.Options.Set(new System.Net.Http.HttpRequestOptionsKey<object>(option.Key), option.Value);
             }
         }" : "")}
         {contents}
@@ -251,7 +254,7 @@ internal abstract class SwaggerPathBase
         string? methodSummary = summary?.Replace('\n', ' ').Replace('\r', ' ');
         if (string.IsNullOrWhiteSpace(methodSummary))
         {
-            methodSummary = "HTTP " + operation + " on /" + apiPath.Replace("{__my_queryBuilder}", "");
+            methodSummary = "HTTP " + operation + " on /" + apiPath.Replace("{__my_queryBuilder.ToString()}", "");
         }
 
         string result = $@"
@@ -287,7 +290,7 @@ internal abstract class SwaggerPathBase
     {{
         var __result = await {name}WithHttpInfoAsync({passThroughParams}{(includeOptionsDictionary ? "options, " : string.Empty)}token);
         await __my_options.InterceptResponse(__result, token);
-        return await {(responseType == "<System.IO.Stream?>" ? "__result.Content.ReadAsStreamAsync(token)" : $"__my_options.DeSerializeContent{responseType}(__result, token)")};
+        return await {(responseType is "<System.IO.Stream?>" ? "__result.Content.ReadAsStreamAsync(token)" : $"__my_options.DeSerializeContent{responseType}(__result, token)")};
     }}
 ");
             }

@@ -56,11 +56,13 @@ internal sealed class SwaggerComponents
 
 namespace {@namespace}.Clients;
 
-[System.Text.Json.Serialization.JsonSourceGenerationOptions(DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull, PropertyNamingPolicy = System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase"
+[System.Text.Json.Serialization.JsonSourceGenerationOptions("
 #if NET8_0_OR_GREATER
-+ ", UseStringEnumConverter = true, PropertyNameCaseInsensitive = true, NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString"
++ @"System.Text.Json.JsonSerializerDefaults.Web, UseStringEnumConverter = true"
+#else
++ @"PropertyNamingPolicy = System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase"
 #endif
-+ $@")]
++ $@", DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
 {string.Join(Environment.NewLine, attributes)}
 {clientModifierValue} sealed partial class {className}JsonSerializerContext : System.Text.Json.Serialization.JsonSerializerContext
 {{"

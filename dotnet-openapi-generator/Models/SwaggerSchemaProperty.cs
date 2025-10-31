@@ -72,7 +72,7 @@ internal sealed class SwaggerSchemaProperty
 
     public IEnumerable<string> GetComponents(IReadOnlyDictionary<string, SwaggerSchema> schemas, int depth)
     {
-        string? resolvedType = format == "array" || type == "array"
+        string? resolvedType = format is "array" || type is "array"
                                 ? items.ResolveArrayType(additionalProperties)
                                 : ResolveType();
 

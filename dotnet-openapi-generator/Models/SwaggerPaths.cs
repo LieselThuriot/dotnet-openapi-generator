@@ -22,7 +22,7 @@ internal sealed class SwaggerPaths : Dictionary<string, SwaggerPath>
 
         var clients = GetClients(excludeObsolete, filter);
 
-        if (clients.Count == 0)
+        if (clients.Count is 0)
         {
             AnsiConsole.MarkupLine("[bold yellow]No clients found to generate[/]");
             return [];
@@ -46,7 +46,7 @@ internal sealed class SwaggerPaths : Dictionary<string, SwaggerPath>
             {
                 foreach (string tag in member.tags)
                 {
-                    if (filter?.IsMatch(tag) == false)
+                    if (filter?.IsMatch(tag) is false)
                     {
                         continue;
                     }
@@ -443,7 +443,7 @@ namespace {@namespace}.Clients;
 
             static StringBuilder TrimEnd(StringBuilder sb)
             {
-                if (sb.Length != 0)
+                if (sb.Length is not 0)
                 {
                     int i = sb.Length - 1;
 
@@ -485,7 +485,7 @@ namespace {@namespace}.Clients;
 
     public override string ToString()
     {
-        if (_result.Length == 0)
+        if (_result.Length is 0)
         {
             return """";
         }
@@ -493,7 +493,7 @@ namespace {@namespace}.Clients;
         return string.Concat(""?"", System.MemoryExtensions.AsSpan(_result, 1));
     }";
 
-        const string withStringBuilders = @"private System.Text.StringBuilder? _builder;
+        const string withStringBuilders = @"private readonly System.Text.StringBuilder _builder;
     public __QueryBuilder()
     {
         _builder = __StringBuilderPool.Acquire();
@@ -511,7 +511,7 @@ namespace {@namespace}.Clients;
     {
         try
         {
-            if (_builder!.Length > 0)
+            if (_builder.Length > 0)
             {
                 _builder[0] = '?';
             }
@@ -520,8 +520,7 @@ namespace {@namespace}.Clients;
         }
         finally
         {
-            __StringBuilderPool.Release(_builder!);
-            _builder = null; //Just making sure that we don't share an instance, worst case.
+            __StringBuilderPool.Release(_builder);
         }
     }";
 
@@ -534,7 +533,7 @@ namespace {@namespace}.Clients;
 
 [System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-internal struct __QueryBuilder
+internal readonly ref struct __QueryBuilder
 {{
     {(stringBuilderPoolSize > 0 ? withStringBuilders : withoutStringBuilders)}
 
@@ -716,7 +715,8 @@ internal static class __StringBuilderPool
             request.Content = CreateContent(content);
         }}{(includeOptionsDictionary ? @"
         
-        if (options is not null) {
+        if (options is not null)
+        {
             foreach (var option in options)
             {
                 request.Options.Set(new System.Net.Http.HttpRequestOptionsKey<object>(option.Key), option.Value);
@@ -730,7 +730,8 @@ internal static class __StringBuilderPool
     {{
         System.Net.Http.HttpRequestMessage request = new(httpMethod, path);{(includeOptionsDictionary ? @"
         
-        if (options is not null) {
+        if (options is not null)
+        {
             foreach (var option in options)
             {
                 request.Options.Set(new System.Net.Http.HttpRequestOptionsKey<object>(option.Key), option.Value);

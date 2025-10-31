@@ -30,7 +30,7 @@ internal sealed class SwaggerSchemaProperties : Dictionary<string, SwaggerSchema
 
         var yields = GetAllYields(allOf, schemas, exclusion).DistinctBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
 
-        if (yields.Count == 0)
+        if (yields.Count is 0)
         {
             builder.Append('\t').Append('\t').AppendLine("return System.Linq.Enumerable.Empty<(string name, object? value)>();");
         }

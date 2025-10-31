@@ -76,7 +76,7 @@ internal sealed class SwaggerSchema
             }
         }
 
-        if (baseProperties.Count == 0 && requiredProperties.Count == 0)
+        if (baseProperties.Count is 0 && requiredProperties.Count is 0)
         {
             return null;
         }
@@ -115,7 +115,7 @@ internal sealed class SwaggerSchema
         return $@"
     {(shouldOmitDefaultCtor ? "" : jsonConstructorAttribute)}public {name}() {{ }}
 
-    {requiredCtorAttributes}public {name}({string.Join(", ", parameters)}){(baseProperties.Count == 0 ? "" : " : base(" + string.Join(", ", baseProperties.Select(x => x.key)) + ")")}
+    {requiredCtorAttributes}public {name}({string.Join(", ", parameters)}){(baseProperties.Count is 0 ? "" : " : base(" + string.Join(", ", baseProperties.Select(x => x.key)) + ")")}
     {{
 {string.Join(Environment.NewLine, assignements.Select(x => "        " + x))}
     }}

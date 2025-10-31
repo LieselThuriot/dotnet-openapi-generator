@@ -16,7 +16,7 @@ internal sealed class SwaggerPathParameter
         object? @default = schema.@default;
         if (@default is not null)
         {
-            if (type == "string")
+            if (type is "string")
             {
                 myName += $" = \"{@default}\"";
             }
@@ -25,7 +25,7 @@ internal sealed class SwaggerPathParameter
                 myName += " = " + @default.ToString()!.ToLowerInvariant();
             }
         }
-        else if (schema.nullable || (@in == "query" && !required))
+        else if (schema.nullable || (@in is "query" && !required))
         {
             myName += " = default";
             if (!type!.EndsWith('?'))

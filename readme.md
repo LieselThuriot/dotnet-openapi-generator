@@ -79,7 +79,7 @@ Liesel Thuriot
 
   --stringbuilder-pool-size          (Default: 50) StringBuilder pool size for building query params. If 0, a simple string concat is used instead
 
-  --oauth-type                       (Default: None) Includes an OAuth Client. Can be ClientCredentials, TokenExchange or CachedTokenExchange
+  --oauth-type                       (Default: None) Includes an OAuth Client. Can be ClientCredentials, ClientCredentialsWithCertificate, TokenExchange or CachedTokenExchange
 
   --oauth-client-credential-style    (Default: PostBody) When including an OAuth Client, we can either pass values in the body or as a basic auth header. Can be PostBody or AuthorizationHeader
 

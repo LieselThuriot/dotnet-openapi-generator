@@ -251,7 +251,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
     private System.Exception CouldNotGetToken(IdentityModel.Client.TokenResponse response)
     {
-        if (response.ErrorType == IdentityModel.Client.ResponseErrorType.Exception)
+        if (response.ErrorType is IdentityModel.Client.ResponseErrorType.Exception)
         {
             return response.Exception ?? new(response.Error ?? "Unknown Error");
         }
@@ -320,7 +320,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         {
             string result = $@"var currentAccessToken = _accessToken;
 
-        if (currentAccessToken?.IsValid() == true)
+        if (currentAccessToken?.IsValid() is true)
         {{
             return System.Threading.Tasks.Task.FromResult(currentAccessToken);
         }}
@@ -336,7 +336,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
             // Check again, access token might already be refreshed.
             var currentAccessToken = _accessToken;
-            if (currentAccessToken?.IsValid() == true)
+            if (currentAccessToken?.IsValid() is true)
             {{
                 return currentAccessToken;
             }}
@@ -401,7 +401,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
         var response = await tokenClient.RequestClientCredentialsTokenAsync(options.Scopes, cancellationToken: cancellationToken);
 
-        if (response.ErrorType != IdentityModel.Client.ResponseErrorType.None)
+        if (response.ErrorType is not IdentityModel.Client.ResponseErrorType.None)
         {
             throw CouldNotGetToken(response);
         }
@@ -445,7 +445,7 @@ string? currentToken = GetAccessToken();
 
         var response = await tokenClient.RequestTokenAsync(IdentityModel.OidcConstants.GrantTypes.TokenExchange, cancellationToken: cancellationToken);
 
-        if (response.ErrorType != IdentityModel.Client.ResponseErrorType.None)
+        if (response.ErrorType is not IdentityModel.Client.ResponseErrorType.None)
         {
             throw CouldNotGetToken(response);
         }

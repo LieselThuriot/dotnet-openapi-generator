@@ -110,7 +110,7 @@ internal sealed class SwaggerSchemaEnum : List<object>
                 {
                     builder.Append(" = ");
 
-                    if (i == 0)
+                    if (i is 0)
                     {
                         builder.Append(0);
                     }
