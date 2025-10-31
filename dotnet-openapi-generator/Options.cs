@@ -57,7 +57,7 @@ public class Options
     [Option("stringbuilder-pool-size", Required = false, HelpText = "StringBuilder pool size for building query params. If 0, a simple string concat is used instead", Default = 50)]
     public int StringBuilderPoolSize { get; set; }
 
-    [Option("oauth-type", Required = false, HelpText = "Includes an OAuth Client. Can be ClientCredentials, TokenExchange or CachedTokenExchange", Default = OAuthType.None)]
+    [Option("oauth-type", Required = false, HelpText = "Includes an OAuth Client. Can be ClientCredentials, ClientCredentialsWithCertificate, TokenExchange or CachedTokenExchange", Default = OAuthType.None)]
     public OAuthType OAuthType { get; set; }
 
     [Option("oauth-client-credential-style", Required = false, HelpText = "When including an OAuth Client, we can either pass values in the body or as a basic auth header. Can be PostBody or AuthorizationHeader", Default = ClientCredentialStyle.PostBody)]

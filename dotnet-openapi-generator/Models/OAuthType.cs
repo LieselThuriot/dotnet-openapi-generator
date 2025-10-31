@@ -4,6 +4,7 @@ public enum OAuthType
 {
     None,
     ClientCredentials,
+    ClientCredentialsWithCertificate,
     TokenExchange,
     CachedTokenExchange
 }

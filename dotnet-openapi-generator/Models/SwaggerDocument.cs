@@ -63,6 +63,15 @@ internal class SwaggerDocument
     <PackageReference Include="IdentityModel" Version="[7.*,)" />
 """;
 
+            if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
+            {
+                additionalIncludes += $"""
+
+                        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="[8.*,)" />
+                        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="[8.*,)" />
+                    """;
+            }
+
             if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
             {
 #if NET8_0_OR_GREATER
@@ -231,10 +240,14 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
     public System.Uri AuthorityUrl { get; }
     public string ClientId { get; }
     public string ClientSecret { get; }
-    public string Scopes { get; }
+    public string Scopes { get; }{{ (options.OAuthType is OAuthType.ClientCredentialsWithCertificate ? @"
+    public string Audience { get; }
+    public int Expiration { get; } = 15;
+    public string ClientCertificate { get; }
+    public string ClientCertificatePassword { get; }" : "")}}
 }
 
-[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet -openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 {{modifierValue}} sealed class ApiAccessToken
 {
@@ -262,9 +275,9 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
     private static string GenerateGetTokenBodyBasedOnType(Options options)
     {
-        if (options.OAuthType is OAuthType.ClientCredentials)
+        if (options.OAuthType is OAuthType.ClientCredentials or OAuthType.ClientCredentialsWithCertificate)
         {
-            return $@"var currentAccessToken = _accessToken;
+            var result = $@"var currentAccessToken = _accessToken;
 
         if (currentAccessToken?.IsValid() == true)
         {{
@@ -300,23 +313,61 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         var discoveryDocumentResponse = await _discoveryCache.GetAsync();
 
         var options = _tokenOptions;
+";
 
+            if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
+            {
+                result += $@"
+        var clientAuthenticationToken = new System.IdentityModel.Tokens.Jwt.JwtPayload()
+        {{
+            {{ ""sub"", options.ClientId }},
+            {{ ""iss"", options.ClientId }},
+            {{ ""jti"", Microsoft.IdentityModel.Tokens.UniqueId.CreateRandomId() }},
+            {{ ""exp"", System.DateTimeOffset.UtcNow.AddMinutes(options.Expiration).ToUnixTimeSeconds() }},
+            {{ ""aud"", options.Audience }}
+        }};
+
+        var header = new System.IdentityModel.Tokens.Jwt.JwtHeader(_credentials);
+        var secToken = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(header, clientAuthenticationToken);
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+
+        string signedClientAuthenticationToken = handler.WriteToken(secToken);
+
+        var parameters = new IdentityModel.Client.Parameters(
+        [
+            System.Collections.Generic.KeyValuePair.Create(""client_assertion_type"", ""urn:ietf:params:oauth:client-assertion-type:jwt-bearer""),
+            System.Collections.Generic.KeyValuePair.Create(""client_assertion"", signedClientAuthenticationToken),
+        ]);
+";
+            }
+
+            result += $@"
         var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient), new IdentityModel.Client.TokenClientOptions
         {{
             ClientId = options.ClientId,
             ClientSecret = options.ClientSecret,
             Address = discoveryDocumentResponse.TokenEndpoint!,
-            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle}
-        }});
+            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle}";
+
+            if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
+            {
+                result += @",
+            Parameters = parameters";
+            }
+
+            result += @"
+        });
 
         var response = await tokenClient.RequestClientCredentialsTokenAsync(options.Scopes, cancellationToken: cancellationToken);
 
         if (response.ErrorType != IdentityModel.Client.ResponseErrorType.None)
-        {{
+        {
             throw CouldNotGetToken(response);
-        }}
+        }
 
         return response;";
+
+            return result;
         }
         else if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
@@ -379,9 +430,22 @@ string? currentToken = GetAccessToken();
 
     private static string GeneratorCtorFieldsBasedOnType(Options options)
     {
-        if (options.OAuthType is OAuthType.ClientCredentials)
+        if (options.OAuthType is OAuthType.ClientCredentials or OAuthType.ClientCredentialsWithCertificate)
         {
-            return "_readLock = new(1, 1);";
+            var result = "_readLock = new(1, 1);";
+
+            if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
+            {
+                result += @"
+        byte[] privateKeyBinary = System.Convert.FromBase64String(tokenOptions.ClientCertificate);
+#pragma warning disable SYSLIB0057 // Type or member is obsolete
+        var signingCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(privateKeyBinary, tokenOptions.ClientCertificatePassword, System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.MachineKeySet | System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable);
+#pragma warning restore SYSLIB0057 // Type or member is obsolete
+        var certificateKey = new Microsoft.IdentityModel.Tokens.X509SecurityKey(signingCertificate);
+        _credentials = new Microsoft.IdentityModel.Tokens.SigningCredentials(certificateKey, ""RS256"");";
+            }
+
+            return result;
         }
         else if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
@@ -403,10 +467,18 @@ string? currentToken = GetAccessToken();
 
     private static string GenerateFieldsBasedOnType(Options options)
     {
-        if (options.OAuthType is OAuthType.ClientCredentials)
+        if (options.OAuthType is OAuthType.ClientCredentials or OAuthType.ClientCredentialsWithCertificate)
         {
-            return @"private readonly System.Threading.SemaphoreSlim _readLock;
+            var result =  @"private readonly System.Threading.SemaphoreSlim _readLock;
     private ApiAccessToken _accessToken;";
+
+            if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
+            {
+                result += @"
+    private readonly Microsoft.IdentityModel.Tokens.SigningCredentials _credentials;";
+            }
+
+            return result;
         }
         else if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
