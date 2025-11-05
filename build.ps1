@@ -1,7 +1,7 @@
 cd dotnet-openapi-generator
 
 $versions = @("8.0", "9.0")
-$postfix = "-preview.16"
+$postfix = "-preview.17"
 
 foreach ($i in $versions) {
    Write-Host "Building for dotnet $i"
