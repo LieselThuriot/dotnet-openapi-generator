@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Spectre.Console;
+using System.Text;
 
 namespace dotnet.openapi.generator;
 
@@ -77,13 +78,13 @@ internal class SwaggerSchemaEnum : List<object>
 
             if (safeName.TrimStart('@') != name.Split(" = ")[0])
             {
-                Logger.Break();
-                Logger.LogWarning($"Enum \'{enumName}\' has a value that's not supported by default in dotnet: \'{name}\' --> \'{safeName}\'.");
-                Logger.LogWarning("\tThis has been marked with an EnumMember attribute.");
-                Logger.LogWarning("\tSystem.Text.Json and Newtonsoft.Json support has been added out of the box.");
-                Logger.LogWarning("\tPlease manually add the needed serialization support to your ClientOptions when using any other libraries.");
-                Logger.Break();
-                
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLineInterpolated($"[bold red]Enum \'{enumName}\' has a value that's not supported by default in dotnet: \'{name}\' --> \'{safeName}\'.[/]");
+                AnsiConsole.MarkupLineInterpolated($"[red]\tThis has been marked with an EnumMember attribute.[/]");
+                AnsiConsole.MarkupLineInterpolated($"[red]\tSystem.Text.Json and Newtonsoft.Json support has been added out of the box.[/]");
+                AnsiConsole.MarkupLineInterpolated($"[red]\tPlease manually add the needed serialization support to your ClientOptions when using any other libraries.[/]");
+                AnsiConsole.WriteLine();
+
                 name = $@"[System.Runtime.Serialization.EnumMember(Value = ""{name}"")]{safeName}";
             }
             else

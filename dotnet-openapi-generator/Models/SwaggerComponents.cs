@@ -1,16 +1,23 @@
-﻿namespace dotnet.openapi.generator;
+﻿using Microsoft.Extensions.Logging;
+using Spectre.Console;
+
+namespace dotnet.openapi.generator;
 
 internal class SwaggerComponents
 {
     public SwaggerComponentSchemas schemas { get; set; } = default!;
 
-    public async Task Generate(string path, string @namespace, string modifier, string clientModifierValue, IEnumerable<string> usedComponents, bool treeShaking, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool includeJsonSourceGenerators, bool supportRequiredProperties, CancellationToken token)
+    public async Task Generate(ProgressContext ctx, string path, string @namespace, string modifier, string clientModifierValue, IEnumerable<string> usedComponents, bool treeShaking, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool includeJsonSourceGenerators, bool supportRequiredProperties, bool verbose, CancellationToken token)
     {
         path = Path.Combine(path, "Models");
 
         if (!Directory.Exists(path))
         {
-            Logger.LogVerbose("Making sure models directory exists");
+            if (verbose)
+            {
+                AnsiConsole.WriteLine("Making sure models directory exists");
+            }
+
             Directory.CreateDirectory(path);
         }
 
@@ -21,23 +28,20 @@ internal class SwaggerComponents
         if (treeShaking)
         {
             schemasToGenerate = new(schemasToGenerate.ToDictionary(x => x.Key.AsSafeString(), x => x.Value));
-            ShakeTree(usedComponents, schemasToGenerate);
+            ShakeTree(usedComponents, schemasToGenerate, verbose);
         }
 
-        Logger.LogInformational("Generating Models");
+        var modelsTask = ctx.AddTask("Generating Models", maxValue: schemasToGenerate.Count);
 
-        int i = 0;
         foreach (var schema in schemasToGenerate)
         {
-            Logger.LogStatus(++i, schemasToGenerate.Count, schema.Key);
             await schema.Value.Generate(path, @namespace, modifier, schema.Key, jsonConstructorAttribute, jsonPolymorphicAttribute, jsonDerivedTypeAttribute, jsonPropertyNameAttribute, supportRequiredProperties, schemasToGenerate, token);
+            modelsTask.Increment(1);
         }
-
-        Logger.BlankLine();
-
+        
         if (includeJsonSourceGenerators)
         {
-            Logger.LogInformational("Generating Json Source Generators");
+            var jsonGeneratorTask = ctx.AddTask("Generating Json Source Generators", maxValue: 1);
 
             var attributes = schemasToGenerate.Keys.Select(x => x.AsSafeString())
                                               .Order()
@@ -74,6 +78,8 @@ namespace {@namespace}.Clients;
 
                 await File.WriteAllTextAsync(Path.Combine(path, "../Clients/__JsonSerializerContext.cs"), template, token);
             }
+
+            jsonGeneratorTask.Increment(1);
         }
     }
 
@@ -90,9 +96,12 @@ internal interface __ICanIterate
 """, token);
     }
 
-    private static void ShakeTree(IEnumerable<string> usedComponents, Dictionary<string, SwaggerSchema> schemas)
+    private static void ShakeTree(IEnumerable<string> usedComponents, Dictionary<string, SwaggerSchema> schemas, bool verbose)
     {
-        Logger.LogVerbose($"Shaking the trees: Currently contains {schemas.Count} models");
+        if (verbose)
+        {
+            AnsiConsole.WriteLine($"Shaking the trees: Currently contains {schemas.Count} models");
+        }
 
         var relevantSchemas = usedComponents.Select(x =>
         {
@@ -117,6 +126,9 @@ internal interface __ICanIterate
             schemas.Remove(key);
         }
 
-        Logger.LogVerbose($"Done shaking the trees: Currently contains {schemas.Count} models");
+        if (verbose)
+        {
+            AnsiConsole.WriteLine($"Done shaking the trees: Currently contains {schemas.Count} models");
+        }
     }
 }

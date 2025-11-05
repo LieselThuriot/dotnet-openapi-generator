@@ -1,17 +1,22 @@
-﻿using System.Text;
+﻿using Spectre.Console;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace dotnet.openapi.generator;
 
 internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 {
-    public async Task<IEnumerable<string>> Generate(string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType oAuthType, bool includeJsonSourceGenerators, SwaggerComponentSchemas componentSchemas, bool includeOptions, CancellationToken token)
+    public async Task<IEnumerable<string>> Generate(ProgressContext ctx, string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType oAuthType, bool includeJsonSourceGenerators, SwaggerComponentSchemas componentSchemas, bool includeOptions, bool verbose, CancellationToken token)
     {
         path = Path.Combine(path, "Clients");
 
         if (!Directory.Exists(path))
         {
-            Logger.LogVerbose("Making sure clients directory exists");
+            if (verbose)
+            {
+                AnsiConsole.WriteLine("Making sure clients directory exists");
+            }
+
             Directory.CreateDirectory(path);
         }
 
@@ -19,14 +24,14 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 
         if (clients.Count == 0)
         {
-            Logger.LogWarning("No clients found to generate");
+            AnsiConsole.MarkupLine("[bold yellow]No clients found to generate[/]");
             return [];
         }
 
-        await GenerateClientOptions(path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, includeOptions, token);
-        await GenerateQueryBuilder(path, @namespace, stringBuilderPoolSize, token);
-        var usedComponents = await GenerateClients(path, @namespace, modifier, excludeObsolete, includeInterfaces, clientModifier, includeOptions, clients, componentSchemas, token);
-        await GenerateRegistrations(path, @namespace, modifier, includeInterfaces, clients.Keys, oAuthType, token);
+        await GenerateClientOptions(ctx, path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, includeOptions, token);
+        await GenerateQueryBuilder(ctx, path, @namespace, stringBuilderPoolSize, token);
+        var usedComponents = await GenerateClients(ctx, path, @namespace, modifier, excludeObsolete, includeInterfaces, clientModifier, includeOptions, clients, componentSchemas, verbose, token);
+        await GenerateRegistrations(ctx, path, @namespace, modifier, includeInterfaces, clients.Keys, oAuthType, token);
 
         return usedComponents;
     }
@@ -66,9 +71,9 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
         return clients;
     }
 
-    private static async Task GenerateRegistrations(string path, string @namespace, string modifier, bool includeInterfaces, IEnumerable<string> clients, OAuthType oAuthType, CancellationToken token)
+    private static async Task GenerateRegistrations(ProgressContext ctx, string path, string @namespace, string modifier, bool includeInterfaces, IEnumerable<string> clients, OAuthType oAuthType, CancellationToken token)
     {
-        Logger.LogInformational("Generating Registrations");
+        var task = ctx.AddTask("Generating Registrations", maxValue: 1);
 
         var clientNames = clients.Order()
                                  .Select(x => $"        public const string {x} = \"{@namespace.AsSafeString(replaceDots: true, replacement: "")}{x}Client\";")
@@ -337,20 +342,19 @@ namespace {@namespace};
     }}
 }}
 ", token);
+
+        task.Increment(1);
     }
 
-    private static async Task<IReadOnlyCollection<string>> GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, bool includeOptions, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, SwaggerComponentSchemas componentSchemas, CancellationToken token)
+    private static async Task<IReadOnlyCollection<string>> GenerateClients(ProgressContext ctx, string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, bool includeOptions, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, SwaggerComponentSchemas componentSchemas, bool verbose, CancellationToken token)
     {
         HashSet<string> usedComponents = [];
 
-        Logger.LogInformational("Generating Clients");
+        var task = ctx.AddTask("Generating Clients", maxValue: clients.Count);
 
-        int i = 0;
         foreach (var client in clients)
         {
             var name = client.Key + "Client";
-
-            Logger.LogStatus(++i, clients.Count, name);
 
             var fileName = Path.Combine(path, name + ".cs");
 
@@ -358,7 +362,11 @@ namespace {@namespace};
 
             if (string.IsNullOrWhiteSpace(body))
             {
-                Logger.LogVerbose(name + " has an empty body, skipping.");
+                if (verbose)
+                {
+                    AnsiConsole.WriteLine(name + " has an empty body, skipping.");
+                }
+
                 continue;
             }
 
@@ -455,16 +463,16 @@ namespace {@namespace}.Clients;
 
                 return sb;
             }
-        }
 
-        Logger.BlankLine();
+            task.Increment(1);
+        }
 
         return usedComponents;
     }
 
-    private static async Task GenerateQueryBuilder(string path, string @namespace, int stringBuilderPoolSize, CancellationToken token)
+    private static async Task GenerateQueryBuilder(ProgressContext ctx, string path, string @namespace, int stringBuilderPoolSize, CancellationToken token)
     {
-        Logger.LogInformational("Generating QueryBuilder");
+        var task = ctx.AddTask("Generating QueryBuilder", maxValue: 1);
         const string withoutStringBuilders = @"private string _result = """";
 
     public void AddParameter(string? value, string valueExpression)
@@ -590,6 +598,8 @@ internal struct __QueryBuilder
         }}
     }}
 }}", token);
+
+        task.Increment(1);
     }
 
     private static Task GenerateStringBuilderPool(string path, string @namespace, int stringBuilderPoolSize, CancellationToken token)
@@ -632,10 +642,9 @@ internal static class __StringBuilderPool
 }}", token);
     }
 
-    private static async Task GenerateClientOptions(string path, string @namespace, string modifier, bool includeOAuth,
-        bool includeJsonSourceGenerators, bool includeOptionsDictionary, CancellationToken token)
+    private static async Task GenerateClientOptions(ProgressContext ctx, string path, string @namespace, string modifier, bool includeOAuth, bool includeJsonSourceGenerators, bool includeOptionsDictionary, CancellationToken token)
     {
-        Logger.LogInformational("Generating ClientOptions");
+        var task = ctx.AddTask("Generating ClientOptions", maxValue: 1);
         var staticCtor = $@"
         s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());";
 
@@ -751,5 +760,7 @@ internal static class __StringBuilderPool
         return System.Threading.Tasks.Task.CompletedTask;
     }}
 }}", token);
+
+        task.Increment(1);
     }
 }

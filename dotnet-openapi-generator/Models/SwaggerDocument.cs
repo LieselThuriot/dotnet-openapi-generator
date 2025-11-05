@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Spectre.Console;
+using System.Text.RegularExpressions;
 
 namespace dotnet.openapi.generator;
 
@@ -13,7 +14,7 @@ internal class SwaggerDocument
     public SwaggerPaths paths { get; set; } = default!;
     public SwaggerInfo? info { get; set; }
 
-    public async Task Generate(Options options, CancellationToken token = default)
+    public async Task Generate(ProgressContext ctx, Options options, CancellationToken token = default)
     {
         string path = options.Directory!;
         string @namespace = options.Namespace!;
@@ -33,24 +34,53 @@ internal class SwaggerDocument
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();
         string clientModifierValue = options.ClientModifier?.ToString().ToLowerInvariant() ?? modifierValue;
 
-        IEnumerable<string> usedComponents = await paths.Generate(path, @namespace, modifierValue, excludeObsolete, filter, includeInterfaces, clientModifierValue, stringBuilderPoolSize, options.OAuthType, includeJsonSourceGenerators, components.schemas, includeOptionsDictionary, token);
+        IEnumerable<string> usedComponents = await paths.Generate(ctx,
+                                                                  path,
+                                                                  @namespace,
+                                                                  modifierValue,
+                                                                  excludeObsolete,
+                                                                  filter,
+                                                                  includeInterfaces,
+                                                                  clientModifierValue,
+                                                                  stringBuilderPoolSize,
+                                                                  options.OAuthType,
+                                                                  includeJsonSourceGenerators,
+                                                                  components.schemas,
+                                                                  includeOptionsDictionary,
+                                                                  options.Verbose,
+                                                                  token);
 
-        await components.Generate(path, @namespace, modifierValue, clientModifierValue, usedComponents, treeShaking, jsonConstructorAttribute, jsonPolymorphicAttribute, jsonDerivedTypeAttribute, jsonPropertyNameAttribute, includeJsonSourceGenerators, supportRequiredProperties, token);
+        await components.Generate(ctx,
+                                  path,
+                                  @namespace,
+                                  modifierValue,
+                                  clientModifierValue,
+                                  usedComponents,
+                                  treeShaking,
+                                  jsonConstructorAttribute,
+                                  jsonPolymorphicAttribute,
+                                  jsonDerivedTypeAttribute,
+                                  jsonPropertyNameAttribute,
+                                  includeJsonSourceGenerators,
+                                  supportRequiredProperties,
+                                  options.Verbose,
+                                  token);
 
         if (!options.ExcludeProject)
         {
-            await GenerateProject(options);
+            await GenerateProject(ctx, options);
         }
 
         if (options.OAuthType is not OAuthType.None)
         {
-            await GenerateOAuth(options);
+            await GenerateOAuth(ctx, options);
         }
     }
 
-    public Task GenerateProject(Options options, CancellationToken token = default)
+    public async Task GenerateProject(ProgressContext ctx, Options options, CancellationToken token = default)
     {
-        Logger.LogInformational("Generating CSPROJ");
+        var task = ctx.AddTask("Generating CSPROJ", maxValue: 1);
+
         var file = Path.Combine(options.Directory!, options.ProjectName + ".csproj");
         var netVersion = Constants.Version;
         var additionalTags = info?.GetProjectTags();
@@ -102,7 +132,7 @@ internal class SwaggerDocument
         }
 #endif
 
-        return File.WriteAllTextAsync(file, $"""
+        await  File.WriteAllTextAsync(file, $"""
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -117,11 +147,13 @@ internal class SwaggerDocument
 </Project>
 
 """, cancellationToken: token);
+
+        task.Increment(1);
     }
 
-    public Task GenerateOAuth(Options options, CancellationToken token = default)
+    public async Task GenerateOAuth(ProgressContext ctx, Options options, CancellationToken token = default)
     {
-        Logger.LogInformational("Generating OAuth Clients");
+        var task = ctx.AddTask("Generating OAuth Clients", maxValue: 1);
 
         var file = Path.Combine(options.Directory!, "Clients", "__TokenRequestClient.cs");
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();
@@ -169,7 +201,7 @@ internal class __TokenCache : ITokenCache
             }
         }
 
-        return File.WriteAllTextAsync(file, Constants.Header + $$"""
+        await File.WriteAllTextAsync(file, Constants.Header + $$"""
 namespace {{options.Namespace}}.Clients;{{additionalHelpers}}
 
 [System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
@@ -275,6 +307,8 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
     public System.TimeSpan GetExpiration() => System.TimeSpan.FromSeconds(ExpiresIn) - System.TimeSpan.FromMinutes(1);
 }
 """, cancellationToken: token);
+
+        task.Increment(1);
     }
 
     private static string GenerateGetTokenBodyBasedOnType(Options options)
