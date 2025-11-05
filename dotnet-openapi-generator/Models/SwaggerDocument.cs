@@ -229,12 +229,16 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 {{modifierValue}} sealed class TokenOptions
 {
-    public TokenOptions(System.Uri authorityUrl, string clientId, string clientSecret, string scopes = "")
+    public TokenOptions(System.Uri authorityUrl, string clientId, string clientSecret, {{ (options.OAuthType is OAuthType.ClientCredentialsWithCertificate ? "string audience, string clientCertificate, string clientCertificatePassword, string scopes = \"\", int expiration = 15" : "string scopes = \"\"")}})
     {
         AuthorityUrl = authorityUrl ?? throw new System.ArgumentNullException(nameof(authorityUrl));
         ClientId = clientId ?? throw new System.ArgumentNullException(nameof(clientId));
         ClientSecret = clientSecret ?? throw new System.ArgumentNullException(nameof(clientSecret));
-        Scopes = scopes ?? "";
+        Scopes = scopes ?? "";{{(options.OAuthType is OAuthType.ClientCredentialsWithCertificate ? @"    
+        Audience = audience ?? throw new System.ArgumentNullException(nameof(audience));
+        Expiration = expiration > 0 ? expiration : throw new System.ArgumentException(nameof(expiration));
+        ClientCertificate = clientCertificate ?? throw new System.ArgumentNullException(nameof(clientCertificate));
+        ClientCertificatePassword = clientCertificatePassword ?? throw new System.ArgumentNullException(nameof(clientCertificatePassword));" : "")}}
     }
 
     public System.Uri AuthorityUrl { get; }
