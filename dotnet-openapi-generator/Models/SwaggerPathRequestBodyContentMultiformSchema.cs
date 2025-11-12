@@ -1,6 +1,6 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathRequestBodyContentMultiformSchema
+internal sealed class SwaggerPathRequestBodyContentMultiformSchema
 {
     public SwaggerSchemaProperties properties { get; set; } = default!;
 

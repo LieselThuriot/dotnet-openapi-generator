@@ -1,4 +1,5 @@
 ﻿namespace dotnet.openapi.generator;
+
 internal static class Compatibility
 {
 #if !NET6_0_OR_GREATER

@@ -4,9 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace dotnet.openapi.generator;
 
-internal class SwaggerComponentSchemas : Dictionary<string, SwaggerSchema>
+internal sealed class SwaggerComponentSchemas : Dictionary<string, SwaggerSchema>
 {
-    [JsonConstructor] public SwaggerComponentSchemas() { }
+    [JsonConstructor]
+    public SwaggerComponentSchemas() { }
 
     public SwaggerComponentSchemas(IDictionary<string, SwaggerSchema> values) : base(values) { }
 
@@ -29,7 +30,7 @@ internal class SwaggerComponentSchemas : Dictionary<string, SwaggerSchema>
         builder.AppendLine(" switch")
                .AppendLine("\t\t{");
 
-        foreach (var (name, safeName) in schema.@enum.IterateValues(schema.flaggedEnum, schema.enumNames))
+        foreach (var (name, safeName) in schema.@enum.IterateValues(schema.enumNames))
         {
             builder.Append("\t\t\t")
                    .Append(type)

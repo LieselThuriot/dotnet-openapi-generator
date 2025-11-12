@@ -1,6 +1,6 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathRequestBodyContent
+internal sealed class SwaggerPathRequestBodyContent
 {
     [System.Text.Json.Serialization.JsonPropertyName("application/json")]
     public SwaggerPathRequestBodyContentJson? applicationjson { get; set; }
@@ -43,7 +43,7 @@ internal class SwaggerPathRequestBodyContent
     {
         if (multipartformdata is not null)
         {
-            return multipartformdata.ResolveType();
+            return SwaggerPathRequestBodyContentMultiform.ResolveType();
         }
 
         if (octetstream is not null)

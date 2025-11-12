@@ -15,7 +15,7 @@ public sealed class GenerateCommand : AsyncCommand<Options>
 
             var sw = Stopwatch.StartNew();
 
-            var result = await AnsiConsole.Progress()
+            int result = await AnsiConsole.Progress()
                                           .Columns([
                                               new TaskDescriptionColumn(),
                                               new ProgressBarColumn(),
@@ -41,7 +41,7 @@ public sealed class GenerateCommand : AsyncCommand<Options>
         }
     }
 
-    private async Task<int> Generate(Options settings, ProgressContext ctx, Stopwatch sw, CancellationToken cancellationToken)
+    private static async Task<int> Generate(Options settings, ProgressContext ctx, Stopwatch sw, CancellationToken cancellationToken)
     {
         var document = await GetDocument(ctx, settings, sw, cancellationToken);
 
@@ -99,14 +99,14 @@ public sealed class GenerateCommand : AsyncCommand<Options>
 
         using HttpClient client = new();
 
-        var document = await GetDocument(options.DocumentLocation, client, options.Verbose, cancellationToken);
+        string document = await GetDocument(options.DocumentLocation, client, options.Verbose, cancellationToken);
         task.Increment(1);
 
         if (options.AdditionalDocumentLocations is not null)
         {
-            foreach (var additionalLocation in options.AdditionalDocumentLocations)
+            foreach (string additionalLocation in options.AdditionalDocumentLocations)
             {
-                var additionalDocument = await GetDocument(additionalLocation, client, options.Verbose, cancellationToken);
+                string additionalDocument = await GetDocument(additionalLocation, client, options.Verbose, cancellationToken);
                 document = Merge(document, additionalDocument);
                 task.Increment(1);
             }
@@ -165,14 +165,13 @@ public sealed class GenerateCommand : AsyncCommand<Options>
                                          .WithAttemptingUnquotedStringTypeDeserialization()
                                          .Build();
 
-        var yamlObject = deserializer.Deserialize(result);
+        object? yamlObject = deserializer.Deserialize(result);
 
         var serializer = new YamlDotNet.Serialization.SerializerBuilder()
                                        .JsonCompatible()
                                        .Build();
 
-        var json = serializer.Serialize(yamlObject);
-
+        string json = serializer.Serialize(yamlObject);
 
         if (verbose)
         {

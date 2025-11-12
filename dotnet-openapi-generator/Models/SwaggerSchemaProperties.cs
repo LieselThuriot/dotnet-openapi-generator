@@ -2,7 +2,7 @@
 
 namespace dotnet.openapi.generator;
 
-internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaProperty>
+internal sealed class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaProperty>
 {
     public IEnumerable<(string Key, SwaggerSchemaProperty Value)> Iterate(string? exclusion)
     {
@@ -19,9 +19,9 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
     {
         StringBuilder builder = new();
 
-        foreach (var item in Iterate(exclusion))
+        foreach (var (Key, Value) in Iterate(exclusion))
         {
-            builder.Append('\t').AppendLine(item.Value.GetBody(item.Key, supportRequiredProperties, jsonPropertyNameAttribute));
+            builder.Append('\t').AppendLine(Value.GetBody(Key, supportRequiredProperties, jsonPropertyNameAttribute));
         }
 
         builder.AppendLine()
@@ -43,7 +43,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
                        .Append(item)
                        .Append("\", ");
 
-                var propertyName = item[0..1].ToUpperInvariant() + item[1..];
+                string propertyName = item[0..1].ToUpperInvariant() + item[1..];
                 if (char.IsDigit(item[0]))
                 {
                     propertyName = '_' + propertyName;
@@ -51,7 +51,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
 
                 if (property.@ref is not null)
                 {
-                    if (schemas.TryGenerateFastEnumToString(property.ResolveType()!, propertyName, out var result))
+                    if (schemas.TryGenerateFastEnumToString(property.ResolveType()!, propertyName, out string? result))
                     {
                         builder.Append(result);
                     }
@@ -80,7 +80,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         {
             foreach (var item in allOf)
             {
-                var type = item.ResolveType();
+                string? type = item.ResolveType();
                 if (!string.IsNullOrEmpty(type) && schemas.TryGetValue(type, out var parentSchema))
                 {
                     if (parentSchema.properties is not null)

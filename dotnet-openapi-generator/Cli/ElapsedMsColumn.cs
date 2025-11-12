@@ -6,7 +6,7 @@ namespace dotnet.openapi.generator.Cli;
 /// <summary>
 /// A column showing the elapsed time of a task.
 /// </summary>
-internal class ElapsedMsColumn : ProgressColumn
+internal sealed class ElapsedMsColumn : ProgressColumn
 {
     /// <inheritdoc/>
     protected override bool NoWrap => true;

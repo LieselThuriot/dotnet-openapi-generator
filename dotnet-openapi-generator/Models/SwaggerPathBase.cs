@@ -1,9 +1,9 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathGet : SwaggerPathBase;
-internal class SwaggerPathPost : SwaggerPathBase;
-internal class SwaggerPathPut : SwaggerPathBase;
-internal class SwaggerPathDelete : SwaggerPathBase;
+internal sealed class SwaggerPathGet : SwaggerPathBase;
+internal sealed class SwaggerPathPost : SwaggerPathBase;
+internal sealed class SwaggerPathPut : SwaggerPathBase;
+internal sealed class SwaggerPathDelete : SwaggerPathBase;
 
 internal abstract class SwaggerPathBase
 {
@@ -28,17 +28,17 @@ internal abstract class SwaggerPathBase
 
         apiPath = apiPath.TrimStart('/');
 
-        var operation = GetType().Name["SwaggerPath".Length..];
+        string operation = GetType().Name["SwaggerPath".Length..];
 
-        var name = operationId ?? (operation + apiPath.AsMethodName());
+        string name = operationId ?? (operation + apiPath.AsMethodName());
 
         if (name.EndsWith("Async"))
         {
             name = name[0..^5];
         }
 
-        var ogName = name;
-        var counter = 1;
+        string ogName = name;
+        int counter = 1;
         while (!methodNames.Add(name))
         {
             name = ogName + "__" + counter++ + "__";
@@ -54,7 +54,7 @@ internal abstract class SwaggerPathBase
                                            .ThenBy(x => x.@in == "path" ? 0 : 1)
                                            .ToList();
 
-        var methodParameterBodies = string.Join(", ", methodParameters.Select(x => x.GetBody()));
+        string methodParameterBodies = string.Join(", ", methodParameters.Select(x => x.GetBody()));
 
         if (methodParameterBodies.Length > 0)
         {
@@ -63,7 +63,7 @@ internal abstract class SwaggerPathBase
 
         var queryParams = (parameters ?? []).Where(x => x.@in == "query").ToList();
 
-        var queryContent = "";
+        string queryContent = "";
         if (queryParams.Count > 0)
         {
             queryContent += "__QueryBuilder __my_queryBuilder = new();" + Environment.NewLine + string.Concat(queryParams.Select(x => $"        __my_queryBuilder.AddParameter({GenerateParameterSyntax(x)}, \"{x.name.TrimStart('@')}\");" + Environment.NewLine)) + Environment.NewLine + "        ";
@@ -71,9 +71,9 @@ internal abstract class SwaggerPathBase
 
             string GenerateParameterSyntax(SwaggerPathParameter x)
             {
-                var syntax = x.name.AsSafeString();
+                string syntax = x.name.AsSafeString();
 
-                if (componentSchemas.TryGenerateFastEnumToString(x.GetComponentType()!, syntax, out var fastToString))
+                if (componentSchemas.TryGenerateFastEnumToString(x.GetComponentType()!, syntax, out string? fastToString))
                 {
                     return fastToString;
                 }
@@ -90,8 +90,8 @@ internal abstract class SwaggerPathBase
             headersToAdd += Environment.NewLine;
             foreach (var header in headerParams)
             {
-                var safeString = header.name.AsSafeString();
-                var type = header.schema.ResolveType() ?? "";
+                string safeString = header.name.AsSafeString();
+                string type = header.schema.ResolveType() ?? "";
 
                 if (type.StartsWith(typeof(List<>).FullName![..^2]))
                 {
@@ -102,7 +102,7 @@ internal abstract class SwaggerPathBase
                     safeString = "\"\" + " + safeString;
                 }
 
-                if (header.schema.@ref is not null && componentSchemas.TryGenerateFastEnumToString(type, safeString, out var fastToString))
+                if (header.schema.@ref is not null && componentSchemas.TryGenerateFastEnumToString(type, safeString, out string? fastToString))
                 {
                     safeString = fastToString;
                 }
@@ -116,7 +116,7 @@ internal abstract class SwaggerPathBase
             }
         }
 
-        var content = $@"$""{apiPath}""";
+        string content = $@"$""{apiPath}""";
         string clientCall;
 
         if (requestBody is not null)
@@ -143,7 +143,7 @@ internal abstract class SwaggerPathBase
 
         if (requestBody?.content?.multipartformdata is not null)
         {
-            var contents = "";
+            string contents = "";
             List<string> contentNames = [];
 
             foreach (var x in requestBody.content.multipartformdata.schema.IterateProperties().Select(x => x.Value)
@@ -151,8 +151,8 @@ internal abstract class SwaggerPathBase
                                             .Select(x => x.AsSafeString())
                                             .AsUniques(x => "@" + x[0..1].ToLowerInvariant() + x[1..]))
             {
-                var paramName = x.name;
-                var paramContentName = string.Concat("__", paramName.AsSpan(1));
+                string paramName = x.name;
+                string paramContentName = string.Concat("__", paramName.AsSpan(1));
                 contentNames.Add(paramContentName);
 
                 if (x.item == typeof(Stream).FullName)
@@ -200,7 +200,7 @@ internal abstract class SwaggerPathBase
         return await __my_http_client.SendAsync(__my_request, token);";
         }
 
-        var passThroughParams = string.Join(", ", methodParameters.Select(x => x.name.AsSafeString()));
+        string passThroughParams = string.Join(", ", methodParameters.Select(x => x.name.AsSafeString()));
 
         if (passThroughParams.Length > 0)
         {
@@ -244,7 +244,7 @@ internal abstract class SwaggerPathBase
             }
         }
 
-        var obsolete = deprecated
+        string obsolete = deprecated
             ? Environment.NewLine + "    [System.Obsolete]"
             : "";
 
@@ -254,7 +254,7 @@ internal abstract class SwaggerPathBase
             methodSummary = "HTTP " + operation + " on /" + apiPath.Replace("{__my_queryBuilder}", "");
         }
 
-        var result = $@"
+        string result = $@"
     /// <summary>
     /// {methodSummary}
     /// </summary>{obsolete}
@@ -328,7 +328,7 @@ internal abstract class SwaggerPathBase
 
         if (responses is not null)
         {
-            var type = responses.ResolveType().TrimEnd('?');
+            string type = responses.ResolveType().TrimEnd('?');
             if (!string.IsNullOrWhiteSpace(type))
             {
                 result = result.Append(type);

@@ -6,10 +6,10 @@ namespace dotnet.openapi.generator;
 
 #if NET7_0_OR_GREATER
 [System.Text.Json.Serialization.JsonSerializable(typeof(SwaggerDocument))]
-internal partial class SwaggerDocumentTypeInfo : System.Text.Json.Serialization.JsonSerializerContext;
+internal sealed partial class SwaggerDocumentTypeInfo : System.Text.Json.Serialization.JsonSerializerContext;
 #endif
 
-internal class SwaggerDocument
+internal sealed class SwaggerDocument
 {
     public SwaggerComponents components { get; set; } = default!;
     public SwaggerPaths paths { get; set; } = default!;
@@ -69,12 +69,12 @@ internal class SwaggerDocument
 
         if (!options.ExcludeProject)
         {
-            await GenerateProject(ctx, options);
+            await GenerateProject(ctx, options, token);
         }
 
         if (options.OAuthType is not OAuthType.None)
         {
-            await GenerateOAuth(ctx, options);
+            await GenerateOAuth(ctx, options, token);
         }
     }
 
@@ -82,10 +82,10 @@ internal class SwaggerDocument
     {
         var task = ctx.AddTask("Project File", maxValue: 1);
 
-        var file = Path.Combine(options.Directory!, options.ProjectName + ".csproj");
+        string file = Path.Combine(options.Directory!, options.ProjectName + ".csproj");
         var netVersion = Constants.Version;
-        var additionalTags = info?.GetProjectTags();
-        var additionalIncludes = "";
+        string? additionalTags = info?.GetProjectTags();
+        string additionalIncludes = "";
 
         if (options.OAuthType is not OAuthType.None)
         {
@@ -123,7 +123,9 @@ internal class SwaggerDocument
                 }
             }
         }
-
+#if !GENERATING_NETSTANDARD
+        const
+#endif
         string targetframework = "";
 #if GENERATING_NETSTANDARD
         {
@@ -133,7 +135,7 @@ internal class SwaggerDocument
         }
 #endif
 
-        await  File.WriteAllTextAsync(file, $"""
+        await File.WriteAllTextAsync(file, $"""
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -152,15 +154,15 @@ internal class SwaggerDocument
         task.Increment(1);
     }
 
-    public async Task GenerateOAuth(ProgressContext ctx, Options options, CancellationToken token = default)
+    public static async Task GenerateOAuth(ProgressContext ctx, Options options, CancellationToken token = default)
     {
         var task = ctx.AddTask("OAuth Clients", maxValue: 1);
 
-        var file = Path.Combine(options.Directory!, "Clients", "__TokenRequestClient.cs");
+        string file = Path.Combine(options.Directory!, "Clients", "__TokenRequestClient.cs");
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();
 
-        var additionalHelpers = "";
-        var additionalCtorParameters = "";
+        string additionalHelpers = "";
+        string additionalCtorParameters = "";
         if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
             additionalCtorParameters += ", Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor";
@@ -262,7 +264,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 {{modifierValue}} sealed class TokenOptions
 {
-    public TokenOptions(System.Uri authorityUrl, string clientId, string clientSecret, {{ (options.OAuthType is OAuthType.ClientCredentialsWithCertificate ? "string audience, string clientCertificate, string clientCertificatePassword, string scopes = \"\", int expiration = 15" : "string scopes = \"\"")}})
+    public TokenOptions(System.Uri authorityUrl, string clientId, string clientSecret, {{(options.OAuthType is OAuthType.ClientCredentialsWithCertificate ? "string audience, string clientCertificate, string clientCertificatePassword, string scopes = \"\", int expiration = 15" : "string scopes = \"\"")}})
     {
         AuthorityUrl = authorityUrl ?? throw new System.ArgumentNullException(nameof(authorityUrl));
         ClientId = clientId ?? throw new System.ArgumentNullException(nameof(clientId));
@@ -277,7 +279,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
     public System.Uri AuthorityUrl { get; }
     public string ClientId { get; }
     public string ClientSecret { get; }
-    public string Scopes { get; }{{ (options.OAuthType is OAuthType.ClientCredentialsWithCertificate ? @"
+    public string Scopes { get; }{{(options.OAuthType is OAuthType.ClientCredentialsWithCertificate ? @"
     public string Audience { get; }
     public int Expiration { get; } = 15;
     public string ClientCertificate { get; }
@@ -316,7 +318,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
     {
         if (options.OAuthType is OAuthType.ClientCredentials or OAuthType.ClientCredentialsWithCertificate)
         {
-            var result = $@"var currentAccessToken = _accessToken;
+            string result = $@"var currentAccessToken = _accessToken;
 
         if (currentAccessToken?.IsValid() == true)
         {{
@@ -471,7 +473,7 @@ string? currentToken = GetAccessToken();
     {
         if (options.OAuthType is OAuthType.ClientCredentials or OAuthType.ClientCredentialsWithCertificate)
         {
-            var result = "_readLock = new(1, 1);";
+            string result = "_readLock = new(1, 1);";
 
             if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
             {
@@ -488,7 +490,7 @@ string? currentToken = GetAccessToken();
         }
         else if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
-            var result = "_httpContextAccessor = httpContextAccessor;";
+            string result = "_httpContextAccessor = httpContextAccessor;";
 
             if (options.OAuthType is OAuthType.CachedTokenExchange)
             {
@@ -508,7 +510,7 @@ string? currentToken = GetAccessToken();
     {
         if (options.OAuthType is OAuthType.ClientCredentials or OAuthType.ClientCredentialsWithCertificate)
         {
-            var result =  @"private readonly System.Threading.SemaphoreSlim _readLock;
+            string result = @"private readonly System.Threading.SemaphoreSlim _readLock;
     private ApiAccessToken _accessToken;";
 
             if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
@@ -521,7 +523,7 @@ string? currentToken = GetAccessToken();
         }
         else if (options.OAuthType is OAuthType.TokenExchange or OAuthType.CachedTokenExchange)
         {
-            var result = "private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _httpContextAccessor;";
+            string result = "private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _httpContextAccessor;";
 
             if (options.OAuthType is OAuthType.CachedTokenExchange)
             {

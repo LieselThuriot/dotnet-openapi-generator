@@ -78,9 +78,9 @@ internal static class Extensions
     {
         HashSet<string> returnedValues = [];
 
-        foreach (var value in values)
+        foreach (string value in values)
         {
-            var result = value;
+            string result = value;
 
             int count = 0;
             while (!returnedValues.Add(result))
@@ -99,7 +99,7 @@ internal static class Extensions
         foreach (var value in values)
         {
             string name = get(value!);
-            var result = name;
+            string result = name;
 
             int count = 0;
             while (!returnedValues.Add(result))

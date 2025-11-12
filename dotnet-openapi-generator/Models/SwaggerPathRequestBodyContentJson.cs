@@ -1,16 +1,10 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathRequestBodyContentJson
+internal sealed class SwaggerPathRequestBodyContentJson
 {
     public SwaggerSchemaProperty schema { get; set; } = default!;
 
-    public string GetBody()
-    {
-        return (schema.ResolveType() ?? "object") + " body, ";
-    }
+    public string GetBody() => (schema.ResolveType() ?? "object") + " body, ";
 
-    public string ResolveType()
-    {
-        return schema.ResolveType() ?? "object";
-    }
+    public string ResolveType() => schema.ResolveType() ?? "object";
 }

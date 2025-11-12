@@ -1,3 +1,3 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerAllOfs : List<SwaggerSchemaProperty>;
+internal sealed class SwaggerAllOfs : List<SwaggerSchemaProperty>;

@@ -1,23 +1,23 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathRequestBodyContentMultiform
+internal sealed class SwaggerPathRequestBodyContentMultiform
 {
     public SwaggerPathRequestBodyContentMultiformSchema schema { get; set; } = default!;
 
     public string GetBody()
     {
-        var result = "";
+        string result = "";
 
-        foreach (var item in schema.IterateProperties())
+        foreach (var (Key, Value) in schema.IterateProperties())
         {
-            var type = item.Value.ResolveType()!;
+            string type = Value.ResolveType()!;
             result += $"{type} @{(type[0..1].ToLowerInvariant() + type[1..]).AsSafeString()}, ";
         }
 
         return result;
     }
 
-    public string ResolveType()
+    public static string ResolveType()
     {
         return typeof(Stream).FullName!;
     }

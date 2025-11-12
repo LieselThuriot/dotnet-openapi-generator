@@ -3,9 +3,9 @@ using System.Text;
 
 namespace dotnet.openapi.generator;
 
-internal class SwaggerSchemaEnum : List<object>
+internal sealed class SwaggerSchemaEnum : List<object>
 {
-    public IEnumerable<(string name, string safeName)> IterateValues(SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames)
+    public IEnumerable<(string name, string safeName)> IterateValues(List<string>? enumNames)
     {
         HashSet<string> unique = new(Count);
 
@@ -13,7 +13,7 @@ internal class SwaggerSchemaEnum : List<object>
 
         for (int i = 0; i < Count; i++)
         {
-            var valueObject = this[i];
+            object? valueObject = this[i];
 
             if (valueObject is null)
             {
@@ -42,7 +42,7 @@ internal class SwaggerSchemaEnum : List<object>
         }
     }
 
-    record struct FastEnumValue(string Name, string Value);
+    private readonly record struct FastEnumValue(string Name, string Value);
     public string GetBody(string enumName, SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames, string modifier)
     {
         List<FastEnumValue> fastEnumValues = [];
@@ -51,11 +51,11 @@ internal class SwaggerSchemaEnum : List<object>
 
         StringBuilder builder = new();
 
-        var flagCount = 0;
+        int flagCount = 0;
         for (int i = 0; i < Count; i++)
         {
             string name;
-            var value = this[i];
+            object? value = this[i];
 
             if (value is null)
             {
@@ -73,7 +73,7 @@ internal class SwaggerSchemaEnum : List<object>
                 name = value.ToString() ?? "";
             }
 
-            var safeName = name.AsSafeString().AsSafeCSharpName("@", "_");
+            string safeName = name.AsSafeString().AsSafeCSharpName("@", "_");
             fastEnumValues.Add(new(safeName, name));
 
             if (safeName.TrimStart('@') != name.Split(" = ")[0])
@@ -130,7 +130,7 @@ internal class SwaggerSchemaEnum : List<object>
         return builder.ToString().TrimEnd('\n', '\r', ',');
     }
 
-    private void AppendConverter(StringBuilder builder, string enumName, string modifier)
+    private static void AppendConverter(StringBuilder builder, string enumName, string modifier)
     {
         builder.Append('}')
             .AppendLine()
@@ -153,7 +153,7 @@ internal class SwaggerSchemaEnum : List<object>
             .AppendLine("    }");
     }
 
-    private void AppendFastEnumHelpers(StringBuilder builder, string enumName, string modifier, IEnumerable<FastEnumValue> fastEnumValues)
+    private static void AppendFastEnumHelpers(StringBuilder builder, string enumName, string modifier, IEnumerable<FastEnumValue> fastEnumValues)
     {
         builder.Append('}')
             .AppendLine()
@@ -174,7 +174,6 @@ internal class SwaggerSchemaEnum : List<object>
                .AppendLine()
                .Append("     public static ").Append(enumName).AppendLine(" FromString(string? value) => value switch")
                .AppendLine("     {");
-
 
         foreach (var item in fastEnumValues)
         {

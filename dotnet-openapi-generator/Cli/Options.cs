@@ -118,7 +118,8 @@ public sealed class Options : CommandSettings
     [DefaultValue(false)]
     public bool GenerateRequestOptionsDictionary { get; set; }
 
-    [CommandOption("-v|--verbose")][Description("Verbose logging")]
+    [CommandOption("-v|--verbose")]
+    [Description("Verbose logging")]
     [DefaultValue(false)]
     public bool Verbose { get; set; }
 }

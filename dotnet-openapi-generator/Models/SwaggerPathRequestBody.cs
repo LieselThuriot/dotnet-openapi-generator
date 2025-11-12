@@ -1,6 +1,6 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathRequestBody
+internal sealed class SwaggerPathRequestBody
 {
     public SwaggerPathRequestBodyContent? content { get; set; }
 

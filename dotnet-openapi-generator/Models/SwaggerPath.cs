@@ -1,6 +1,6 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPath
+internal sealed class SwaggerPath
 {
     public SwaggerPathGet? get { get; set; }
     public SwaggerPathPost? post { get; set; }
@@ -9,9 +9,24 @@ internal class SwaggerPath
 
     public IEnumerable<SwaggerPathBase> IterateMembers()
     {
-        if (get is not null) yield return get;
-        if (post is not null) yield return post;
-        if (put is not null) yield return put;
-        if (delete is not null) yield return delete;
+        if (get is not null)
+        {
+            yield return get;
+        }
+
+        if (post is not null)
+        {
+            yield return post;
+        }
+
+        if (put is not null)
+        {
+            yield return put;
+        }
+
+        if (delete is not null)
+        {
+            yield return delete;
+        }
     }
 }

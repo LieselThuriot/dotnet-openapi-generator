@@ -1,6 +1,6 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathParameter
+internal sealed class SwaggerPathParameter
 {
     public string name { get; set; } = default!;
     public bool required { get; set; }
@@ -10,10 +10,10 @@ internal class SwaggerPathParameter
 
     public string GetBody()
     {
-        var type = schema.ResolveType();
-        var myName = name.AsSafeString();
+        string? type = schema.ResolveType();
+        string myName = name.AsSafeString();
 
-        var @default = schema.@default;
+        object? @default = schema.@default;
         if (@default is not null)
         {
             if (type == "string")

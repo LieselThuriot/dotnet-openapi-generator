@@ -1,6 +1,6 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathRequestBodyContentOctetStream
+internal sealed class SwaggerPathRequestBodyContentOctetStream
 {
     public SwaggerSchemaProperty schema { get; set; } = default!;
 

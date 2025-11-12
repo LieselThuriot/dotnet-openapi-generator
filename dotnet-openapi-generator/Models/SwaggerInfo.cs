@@ -19,7 +19,7 @@ public class SwaggerInfo
 
             if (match.Success)
             {
-                var versionTag = match.Groups["major"].Value;
+                string versionTag = match.Groups["major"].Value;
                 void AppendVersion(Group group, int? alternative)
                 {
                     if (group.Success)
@@ -44,7 +44,7 @@ public class SwaggerInfo
 
         if (!string.IsNullOrEmpty(title))
         {
-            var escaped = SecurityElement.Escape(title);
+            string escaped = SecurityElement.Escape(title);
             tags += $@"
     <Title>{escaped}</Title>
     <Product>{escaped}</Product>";

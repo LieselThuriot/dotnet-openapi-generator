@@ -1,6 +1,6 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerSchema
+internal sealed class SwaggerSchema
 {
     public SwaggerSchemaEnum? @enum { get; set; }
 
@@ -65,7 +65,7 @@ internal class SwaggerSchema
         {
             foreach (var inherited in allOf)
             {
-                var type = inherited.ResolveType();
+                string? type = inherited.ResolveType();
                 if (!string.IsNullOrEmpty(type) && schemas.TryGetValue(type, out var parentSchema))
                 {
                     foreach (var property in parentSchema.GetRequiredProperties())
@@ -84,8 +84,8 @@ internal class SwaggerSchema
         var parameters = baseProperties.Union(requiredProperties).Select(x => x.value.ResolveType() + " " + x.key.AsSafeVariableName());
         var assignements = requiredProperties.Select(x =>
         {
-            var assignee = x.key[0..1].ToUpperInvariant() + x.key[1..];
-            var assignment = x.key.AsSafeVariableName();
+            string assignee = x.key[0..1].ToUpperInvariant() + x.key[1..];
+            string assignment = x.key.AsSafeVariableName();
 
             if (char.IsDigit(assignee[0]))
             {
@@ -100,8 +100,8 @@ internal class SwaggerSchema
             return assignee + " = " + assignment + ";";
         });
 
-        var requiredCtorAttributes = "";
-        var shouldOmitDefaultCtor = string.IsNullOrWhiteSpace(jsonConstructorAttribute);
+        string requiredCtorAttributes = "";
+        bool shouldOmitDefaultCtor = string.IsNullOrWhiteSpace(jsonConstructorAttribute);
 
         jsonConstructorAttribute = "[" + jsonConstructorAttribute + "] ";
 
@@ -130,7 +130,7 @@ internal class SwaggerSchema
 
         if (allOf is not null)
         {
-            foreach (var item in allOf.Select(x => x.ResolveType()))
+            foreach (string? item in allOf.Select(x => x.ResolveType()))
             {
                 if (item is not null)
                 {
@@ -162,7 +162,7 @@ internal class SwaggerSchema
     public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool supportRequiredProperties, SwaggerComponentSchemas schemas, CancellationToken token)
     {
         name = name.AsSafeString();
-        var fileName = Path.Combine(path, name + ".cs");
+        string fileName = Path.Combine(path, name + ".cs");
 
         string attributes = "";
         if (jsonPolymorphicAttribute is not null && jsonDerivedTypeAttribute is not null)
@@ -183,7 +183,7 @@ internal class SwaggerSchema
             }
         }
 
-        var template = Constants.Header + $$"""
+        string template = Constants.Header + $$"""
 namespace {{@namespace}}.Models;
 
 [System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]{{attributes}}
@@ -192,7 +192,7 @@ namespace {{@namespace}}.Models;
     : (flaggedEnum is not null
         ? "[System.Flags]" + Environment.NewLine
         : "")
-        + "[System.Text.Json.Serialization.JsonConverter(typeof("+name+@"EnumConverter))]
+        + "[System.Text.Json.Serialization.JsonConverter(typeof(" + name + @"EnumConverter))]
 ")}}{{modifier}} {{GetDefinitionType(name, schemas.Values)}} {{name}}{{GetInheritance()}}
 {{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}}
 {{GetBody(name, supportRequiredProperties, jsonPropertyNameAttribute, schemas, modifier)}}
@@ -210,7 +210,7 @@ namespace {{@namespace}}.Models;
             {
                 foreach (var (key, value) in IterateProperties()!)
                 {
-                    foreach (var component in value.GetComponents(schemas, depth))
+                    foreach (string component in value.GetComponents(schemas, depth))
                     {
                         yield return component;
                     }
@@ -221,7 +221,7 @@ namespace {{@namespace}}.Models;
             {
                 foreach (var item in allOf)
                 {
-                    foreach (var component in item.GetComponents(schemas, depth))
+                    foreach (string component in item.GetComponents(schemas, depth))
                     {
                         yield return component;
                     }

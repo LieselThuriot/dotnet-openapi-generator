@@ -3,7 +3,7 @@ using Spectre.Console;
 
 namespace dotnet.openapi.generator;
 
-internal class SwaggerComponents
+internal sealed class SwaggerComponents
 {
     public SwaggerComponentSchemas schemas { get; set; } = default!;
 
@@ -23,7 +23,7 @@ internal class SwaggerComponents
 
         await GenerateInternals(path, @namespace, token);
 
-        var schemasToGenerate = this.schemas;
+        var schemasToGenerate = schemas;
 
         if (treeShaking)
         {
@@ -38,7 +38,7 @@ internal class SwaggerComponents
             await schema.Value.Generate(path, @namespace, modifier, schema.Key, jsonConstructorAttribute, jsonPolymorphicAttribute, jsonDerivedTypeAttribute, jsonPropertyNameAttribute, supportRequiredProperties, schemasToGenerate, token);
             modelsTask.Increment(1);
         }
-        
+
         if (includeJsonSourceGenerators)
         {
             var jsonGeneratorTask = ctx.AddTask("Json Source Generators", maxValue: 1);
@@ -50,9 +50,9 @@ internal class SwaggerComponents
 
             if (attributes.Count > 0)
             {
-                var className = @namespace.AsSafeString(replaceDots: true, replacement: "");
+                string className = @namespace.AsSafeString(replaceDots: true, replacement: "");
 
-                var template = Constants.Header + $@"using {@namespace}.Models;
+                string template = Constants.Header + $@"using {@namespace}.Models;
 
 namespace {@namespace}.Clients;
 
@@ -83,9 +83,9 @@ namespace {@namespace}.Clients;
         }
     }
 
-    private static async Task GenerateInternals(string path, string @namespace, CancellationToken token)
+    private static Task GenerateInternals(string path, string @namespace, CancellationToken token)
     {
-        await File.WriteAllTextAsync(Path.Combine(path, "__ICanIterate.cs"), Constants.Header + $$"""
+        return File.WriteAllTextAsync(Path.Combine(path, "__ICanIterate.cs"), Constants.Header + $$"""
 namespace {{@namespace}}.Models;
 
 [System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
@@ -115,13 +115,13 @@ internal interface __ICanIterate
             return x;
         }).Select(key =>
         {
-            var hasIt = schemas.TryGetValue(key, out var schema);
+            bool hasIt = schemas.TryGetValue(key, out var schema);
             return (hasIt, key, schema);
         })
         .Where(x => x.hasIt)
         .SelectMany(x => x.schema!.GetComponents(schemas, depth: 0).Append(x.key));
 
-        foreach (var key in schemas.Keys.Except(relevantSchemas).ToList())
+        foreach (string? key in schemas.Keys.Except(relevantSchemas).ToList())
         {
             schemas.Remove(key);
         }

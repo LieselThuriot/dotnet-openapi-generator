@@ -2,7 +2,7 @@
 
 namespace dotnet.openapi.generator;
 
-internal class SwaggerSchemaProperty
+internal sealed class SwaggerSchemaProperty
 {
     [System.Text.Json.Serialization.JsonPropertyName("$ref")]
     public string? @ref { get; set; }
@@ -82,7 +82,7 @@ internal class SwaggerSchemaProperty
 
             if (schemas.TryGetValue(resolvedType, out var schema))
             {
-                foreach (var usedType in schema.GetComponents(schemas, depth))
+                foreach (string usedType in schema.GetComponents(schemas, depth))
                 {
                     yield return usedType;
                 }

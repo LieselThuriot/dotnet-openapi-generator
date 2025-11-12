@@ -1,6 +1,6 @@
 ﻿namespace dotnet.openapi.generator;
 
-internal class SwaggerPathResponses
+internal sealed class SwaggerPathResponses
 {
     [System.Text.Json.Serialization.JsonPropertyName("200")]
     public SwaggerPathRequestBody? _200 { get; set; }

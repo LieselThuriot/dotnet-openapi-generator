@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace dotnet.openapi.generator;
 
-internal class SwaggerPaths : Dictionary<string, SwaggerPath>
+internal sealed class SwaggerPaths : Dictionary<string, SwaggerPath>
 {
     public async Task<IEnumerable<string>> Generate(ProgressContext ctx, string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType oAuthType, bool includeJsonSourceGenerators, SwaggerComponentSchemas componentSchemas, bool includeOptions, bool verbose, CancellationToken token)
     {
@@ -44,14 +44,14 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
         {
             foreach (var member in item.Value.IterateMembers().Where(x => x.tags is not null && (!excludeObsolete || !x.deprecated)))
             {
-                foreach (var tag in member.tags)
+                foreach (string tag in member.tags)
                 {
                     if (filter?.IsMatch(tag) == false)
                     {
                         continue;
                     }
 
-                    var safeTag = tag.AsSafeClientName();
+                    string safeTag = tag.AsSafeClientName();
 
                     if (clients.TryGetValue(safeTag, out var list))
                     {
@@ -75,17 +75,17 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
     {
         var task = ctx.AddTask("Registrations", maxValue: 1);
 
-        var clientNames = clients.Order()
+        string clientNames = clients.Order()
                                  .Select(x => $"        public const string {x} = \"{@namespace.AsSafeString(replaceDots: true, replacement: "")}{x}Client\";")
                                  .Aggregate((current, next) => current + Environment.NewLine + next);
 
-        var addHttpClientRegistrations = clients.Order()
+        string addHttpClientRegistrations = clients.Order()
                                                 .Select(x => $"        Register<{GetClientGeneric(x)}>(__ClientNames.{x});")
                                                 .Aggregate((current, next) => current + Environment.NewLine + next);
 
         string GetClientGeneric(string name)
         {
-            var result = name + "Client";
+            string result = name + "Client";
 
             if (includeInterfaces)
             {
@@ -354,11 +354,11 @@ namespace {@namespace};
 
         foreach (var client in clients)
         {
-            var name = client.Key + "Client";
+            string name = client.Key + "Client";
 
-            var fileName = Path.Combine(path, name + ".cs");
+            string fileName = Path.Combine(path, name + ".cs");
 
-            var body = GetBody();
+            string body = GetBody();
 
             if (string.IsNullOrWhiteSpace(body))
             {
@@ -370,7 +370,7 @@ namespace {@namespace};
                 continue;
             }
 
-            var template = Constants.Header + $@"using {@namespace}.Models;
+            string template = Constants.Header + $@"using {@namespace}.Models;
 
 namespace {@namespace}.Clients;
 
@@ -408,9 +408,9 @@ namespace {@namespace}.Clients;
 
                 foreach (var item in client.Value)
                 {
-                    var body = item.path.GetBody(item.apiPath, methodNames, excludeObsolete, componentSchemas, includeOptions);
+                    string body = item.path.GetBody(item.apiPath, methodNames, excludeObsolete, componentSchemas, includeOptions);
 
-                    foreach (var componennt in item.path.GetComponents())
+                    foreach (string componennt in item.path.GetComponents())
                     {
                         usedComponents.Add(componennt);
                     }
@@ -428,9 +428,9 @@ namespace {@namespace}.Clients;
 
                 foreach (var item in client.Value)
                 {
-                    var body = item.path.GetBodySignature(item.apiPath, methodNames, excludeObsolete, componentSchemas, includeOptions);
+                    string body = item.path.GetBodySignature(item.apiPath, methodNames, excludeObsolete, componentSchemas, includeOptions);
 
-                    foreach (var componennt in item.path.GetComponents())
+                    foreach (string componennt in item.path.GetComponents())
                     {
                         usedComponents.Add(componennt);
                     }
@@ -645,7 +645,7 @@ internal static class __StringBuilderPool
     private static async Task GenerateClientOptions(ProgressContext ctx, string path, string @namespace, string modifier, bool includeOAuth, bool includeJsonSourceGenerators, bool includeOptionsDictionary, CancellationToken token)
     {
         var task = ctx.AddTask("ClientOptions", maxValue: 1);
-        var staticCtor = $@"
+        string staticCtor = $@"
         s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());";
 
         if (includeJsonSourceGenerators)
