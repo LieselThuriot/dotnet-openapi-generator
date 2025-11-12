@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
-namespace dotnet.openapi.generator;
+namespace dotnet.openapi.generator.Cli;
 
 public sealed class Options : CommandSettings
 {

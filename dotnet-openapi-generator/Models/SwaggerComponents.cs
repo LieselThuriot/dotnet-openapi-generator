@@ -31,7 +31,7 @@ internal class SwaggerComponents
             ShakeTree(usedComponents, schemasToGenerate, verbose);
         }
 
-        var modelsTask = ctx.AddTask("Generating Models", maxValue: schemasToGenerate.Count);
+        var modelsTask = ctx.AddTask("Models", maxValue: schemasToGenerate.Count);
 
         foreach (var schema in schemasToGenerate)
         {
@@ -41,7 +41,7 @@ internal class SwaggerComponents
         
         if (includeJsonSourceGenerators)
         {
-            var jsonGeneratorTask = ctx.AddTask("Generating Json Source Generators", maxValue: 1);
+            var jsonGeneratorTask = ctx.AddTask("Json Source Generators", maxValue: 1);
 
             var attributes = schemasToGenerate.Keys.Select(x => x.AsSafeString())
                                               .Order()

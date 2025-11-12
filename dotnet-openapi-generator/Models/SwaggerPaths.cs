@@ -73,7 +73,7 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 
     private static async Task GenerateRegistrations(ProgressContext ctx, string path, string @namespace, string modifier, bool includeInterfaces, IEnumerable<string> clients, OAuthType oAuthType, CancellationToken token)
     {
-        var task = ctx.AddTask("Generating Registrations", maxValue: 1);
+        var task = ctx.AddTask("Registrations", maxValue: 1);
 
         var clientNames = clients.Order()
                                  .Select(x => $"        public const string {x} = \"{@namespace.AsSafeString(replaceDots: true, replacement: "")}{x}Client\";")
@@ -350,7 +350,7 @@ namespace {@namespace};
     {
         HashSet<string> usedComponents = [];
 
-        var task = ctx.AddTask("Generating Clients", maxValue: clients.Count);
+        var task = ctx.AddTask("Clients", maxValue: clients.Count);
 
         foreach (var client in clients)
         {
@@ -472,7 +472,7 @@ namespace {@namespace}.Clients;
 
     private static async Task GenerateQueryBuilder(ProgressContext ctx, string path, string @namespace, int stringBuilderPoolSize, CancellationToken token)
     {
-        var task = ctx.AddTask("Generating QueryBuilder", maxValue: 1);
+        var task = ctx.AddTask("QueryBuilder", maxValue: 1);
         const string withoutStringBuilders = @"private string _result = """";
 
     public void AddParameter(string? value, string valueExpression)
@@ -644,7 +644,7 @@ internal static class __StringBuilderPool
 
     private static async Task GenerateClientOptions(ProgressContext ctx, string path, string @namespace, string modifier, bool includeOAuth, bool includeJsonSourceGenerators, bool includeOptionsDictionary, CancellationToken token)
     {
-        var task = ctx.AddTask("Generating ClientOptions", maxValue: 1);
+        var task = ctx.AddTask("ClientOptions", maxValue: 1);
         var staticCtor = $@"
         s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());";
 

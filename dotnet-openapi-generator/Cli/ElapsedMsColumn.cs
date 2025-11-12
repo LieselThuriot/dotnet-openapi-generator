@@ -1,7 +1,7 @@
 ﻿using Spectre.Console;
 using Spectre.Console.Rendering;
 
-namespace dotnet.openapi.generator;
+namespace dotnet.openapi.generator.Cli;
 
 /// <summary>
 /// A column showing the elapsed time of a task.

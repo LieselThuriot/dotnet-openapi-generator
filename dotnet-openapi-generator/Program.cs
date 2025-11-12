@@ -1,4 +1,4 @@
-﻿using dotnet.openapi.generator;
+﻿using dotnet.openapi.generator.Cli;
 using Spectre.Console.Cli;
 
 CommandApp<GenerateCommand> app = new();

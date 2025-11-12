@@ -1,4 +1,5 @@
-﻿using Spectre.Console;
+﻿using dotnet.openapi.generator.Cli;
+using Spectre.Console;
 using System.Text.RegularExpressions;
 
 namespace dotnet.openapi.generator;
@@ -79,7 +80,7 @@ internal class SwaggerDocument
 
     public async Task GenerateProject(ProgressContext ctx, Options options, CancellationToken token = default)
     {
-        var task = ctx.AddTask("Generating CSPROJ", maxValue: 1);
+        var task = ctx.AddTask("Project File", maxValue: 1);
 
         var file = Path.Combine(options.Directory!, options.ProjectName + ".csproj");
         var netVersion = Constants.Version;
@@ -153,7 +154,7 @@ internal class SwaggerDocument
 
     public async Task GenerateOAuth(ProgressContext ctx, Options options, CancellationToken token = default)
     {
-        var task = ctx.AddTask("Generating OAuth Clients", maxValue: 1);
+        var task = ctx.AddTask("OAuth Clients", maxValue: 1);
 
         var file = Path.Combine(options.Directory!, "Clients", "__TokenRequestClient.cs");
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();

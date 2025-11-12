@@ -2,7 +2,7 @@
 using Spectre.Console.Cli;
 using System.Diagnostics;
 
-namespace dotnet.openapi.generator;
+namespace dotnet.openapi.generator.Cli;
 
 public sealed class GenerateCommand : AsyncCommand<Options>
 {
@@ -91,9 +91,9 @@ public sealed class GenerateCommand : AsyncCommand<Options>
         options.Namespace ??= options.ProjectName.AsSafeString(replaceDots: false);
     }
 
-    internal async Task<SwaggerDocument?> GetDocument(ProgressContext ctx, Options options, Stopwatch sw, CancellationToken cancellationToken)
+    internal static async Task<SwaggerDocument?> GetDocument(ProgressContext ctx, Options options, Stopwatch sw, CancellationToken cancellationToken)
     {
-        var task = ctx.AddTask("Retrieving documents", maxValue: 1 + (options.AdditionalDocumentLocations?.Count ?? 0));
+        var task = ctx.AddTask("Resolving", maxValue: 1 + (options.AdditionalDocumentLocations?.Count ?? 0));
 
         Prepare(options);
 
