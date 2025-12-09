@@ -364,4 +364,4 @@ FodyWeavers.xsd
 
 # test files
 /tests
-*tests.sln
+*tests.slnx
