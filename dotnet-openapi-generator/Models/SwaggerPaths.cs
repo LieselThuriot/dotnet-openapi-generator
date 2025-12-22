@@ -42,7 +42,26 @@ internal sealed class SwaggerPaths : Dictionary<string, SwaggerPath>
 
         foreach (var item in this)
         {
-            string apiPath = item.Key.Trim('/').AsSafeString();
+            string apiPath = item.Key.Trim('/');
+
+            string? safeApiTag = null;
+            string[] apiPathParts = apiPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (apiPathParts.Length > 0)
+            {
+                if (Regexes.Version().IsMatch(apiPathParts[0]))
+                {
+                    if (apiPathParts.Length > 1)
+                    {
+                        // first part is a version, use the second part
+                        safeApiTag = apiPathParts[1].AsSafeClientName();
+                    }
+                }
+                else
+                {
+                    safeApiTag = apiPathParts[0].AsSafeClientName();
+                }
+            }
+
             foreach (var member in item.Value.IterateMembers().Where(x => !excludeObsolete || !x.deprecated))
             {
                 if (member.tags is null)
@@ -59,7 +78,7 @@ internal sealed class SwaggerPaths : Dictionary<string, SwaggerPath>
                         continue;
                     }
 
-                    string safeTag = (member.summary ?? member.operationId ?? apiPath).AsSafeClientName();
+                    string safeTag = safeApiTag ?? (member.summary ?? member.operationId)?.AsSafeClientName() ?? "Default";
                     
                     if (clients.TryGetValue(safeTag, out var list))
                     {

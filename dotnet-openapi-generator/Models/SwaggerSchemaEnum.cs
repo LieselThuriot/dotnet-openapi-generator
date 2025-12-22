@@ -78,12 +78,13 @@ internal sealed class SwaggerSchemaEnum : List<object>
 
             if (safeName.TrimStart('@') != name.Split(" = ")[0])
             {
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLineInterpolated($"[bold red]Enum \'{enumName}\' has a value that's not supported by default in dotnet: \'{name}\' --> \'{safeName}\'.[/]");
-                AnsiConsole.MarkupLineInterpolated($"[red]\tThis has been marked with an EnumMember attribute.[/]");
-                AnsiConsole.MarkupLineInterpolated($"[red]\tSystem.Text.Json and Newtonsoft.Json support has been added out of the box.[/]");
-                AnsiConsole.MarkupLineInterpolated($"[red]\tPlease manually add the needed serialization support to your ClientOptions when using any other libraries.[/]");
-                AnsiConsole.WriteLine();
+                ErrorContext.AddErrorWithMarkup(
+                    $"[bold yellow]Enum \'{enumName}\' has a value that's not supported by default in dotnet and was renamed: \'{name}\' --> \'{safeName}\'.[/]",
+                    "[yellow]\t- This has been marked with an EnumMember attribute.[/]",
+                    "[yellow]\t- System.Text.Json and Newtonsoft.Json support has been added out of the box.[/]",
+                    "[yellow]\t- Please manually add the needed serialization support to your ClientOptions when using any other libraries.[/]",
+                    ""
+                );
 
                 name = $@"[System.Runtime.Serialization.EnumMember(Value = ""{name}"")]{safeName}";
             }
