@@ -14,6 +14,7 @@ internal sealed class SwaggerSchemaProperty
     [System.Text.Json.Serialization.JsonConverter(typeof(BooleanOrObjectConverter<SwaggerSchemaPropertyAdditionalProperties>))]
     public SwaggerSchemaPropertyAdditionalProperties? additionalProperties { get; set; }
     public System.Text.Json.JsonElement? items { get; set; }
+    public SwaggerSchemaProperties? properties { get; set; }
 
     public string GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute)
     {

@@ -35,6 +35,11 @@ internal sealed class SwaggerDocument
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();
         string clientModifierValue = options.ClientModifier?.ToString().ToLowerInvariant() ?? modifierValue;
 
+        if (components.schemas is null)
+        {
+            components.BuildSchemas(GetFilteredPaths(paths, excludeObsolete, filter));
+        }
+
         IEnumerable<string> usedComponents = await paths.Generate(ctx,
                                                                   path,
                                                                   @namespace,
@@ -46,7 +51,7 @@ internal sealed class SwaggerDocument
                                                                   stringBuilderPoolSize,
                                                                   options.OAuthType,
                                                                   includeJsonSourceGenerators,
-                                                                  components.schemas,
+                                                                  components.schemas!,
                                                                   includeOptionsDictionary,
                                                                   options.Verbose,
                                                                   token);
@@ -76,6 +81,32 @@ internal sealed class SwaggerDocument
         {
             await GenerateOAuth(ctx, options, token);
         }
+    }
+
+    private static SwaggerPaths GetFilteredPaths(SwaggerPaths paths, bool excludeObsolete, Regex? filter)
+    {
+        if (!excludeObsolete && filter is null)
+        {
+            return paths;
+        }
+
+        SwaggerPaths filteredPaths = [];
+        foreach (var (key, value) in paths)
+        {
+            if (excludeObsolete && value.IterateMembers().Any(x => x.deprecated))
+            {
+                continue;
+            }
+
+            if (filter?.IsMatch(key) == false)
+            {
+                continue;
+            }
+
+            filteredPaths.Add(key, value);
+        }
+
+        return filteredPaths;
     }
 
     public async Task GenerateProject(ProgressContext ctx, Options options, CancellationToken token = default)

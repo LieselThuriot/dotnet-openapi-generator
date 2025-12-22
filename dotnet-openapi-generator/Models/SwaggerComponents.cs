@@ -1,11 +1,49 @@
-﻿using Microsoft.Extensions.Logging;
-using Spectre.Console;
+﻿using Spectre.Console;
 
 namespace dotnet.openapi.generator;
 
 internal sealed class SwaggerComponents
 {
+    private bool _skipShake;
+
     public SwaggerComponentSchemas schemas { get; set; } = default!;
+
+    public void BuildSchemas(SwaggerPaths paths)
+    {
+        _skipShake = true;
+        schemas = [];
+
+        foreach ((string pathKey, SwaggerPath pathValue) in paths)
+        {
+            string apiPath = pathKey.Trim('/').AsSafeString();
+
+            foreach (SwaggerPathBase operation in pathValue.IterateMembers().Where(x => x.responses is not null))
+            {
+                string name = operation.GetType().Name["SwaggerPath".Length..] + (operation.operationId?.AsSafeString() ?? apiPath);
+
+                var responses = operation.responses!.Where(x => x.Value.content is not null).ToList();
+
+                foreach ((string typeKey, SwaggerPathRequestBody typeValue) in responses)
+                {
+                    string schemaName = name;
+
+                    if (responses.Count > 1)
+                    {
+                        schemaName += typeKey;
+                    }
+
+                    foreach (SwaggerSchemaProperty schema in typeValue.content!.ResolveSchemas())
+                    {
+                        schema.format = "#/components/schemas/" + schemaName;
+                        schemas[schemaName] = new()
+                        {
+                            properties = schema.properties
+                        };
+                    }
+                }
+            }
+        }
+    }
 
     public async Task Generate(ProgressContext ctx, string path, string @namespace, string modifier, string clientModifierValue, IEnumerable<string> usedComponents, bool treeShaking, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool includeJsonSourceGenerators, bool supportRequiredProperties, bool verbose, CancellationToken token)
     {
@@ -25,7 +63,7 @@ internal sealed class SwaggerComponents
 
         var schemasToGenerate = schemas;
 
-        if (treeShaking)
+        if (!_skipShake && treeShaking)
         {
             schemasToGenerate = new(schemasToGenerate.ToDictionary(x => x.Key.AsSafeString(), x => x.Value));
             ShakeTree(usedComponents, schemasToGenerate, verbose);

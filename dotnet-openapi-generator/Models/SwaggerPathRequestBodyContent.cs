@@ -63,4 +63,27 @@ internal sealed class SwaggerPathRequestBodyContent
 
         return "";
     }
+
+    public IEnumerable<SwaggerSchemaProperty> ResolveSchemas()
+    {
+        if (applicationjson is not null)
+        {
+            yield return applicationjson.schema;
+        }
+        else if (applicationjsonapi is not null)
+        {
+            yield return applicationjsonapi.schema;
+        }
+        else if (octetstream is not null)
+        {
+            yield return octetstream.schema;
+        }
+        else if (multipartformdata is not null)
+        {
+            foreach (var prop in multipartformdata.schema.properties.Values)
+            {
+                yield return prop;
+            }
+        }
+    }
 }

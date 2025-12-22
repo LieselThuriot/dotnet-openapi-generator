@@ -42,17 +42,25 @@ internal sealed class SwaggerPaths : Dictionary<string, SwaggerPath>
 
         foreach (var item in this)
         {
-            foreach (var member in item.Value.IterateMembers().Where(x => x.tags is not null && (!excludeObsolete || !x.deprecated)))
+            string apiPath = item.Key.Trim('/').AsSafeString();
+            foreach (var member in item.Value.IterateMembers().Where(x => !excludeObsolete || !x.deprecated))
             {
-                foreach (string tag in member.tags)
+                if (member.tags is null)
                 {
-                    if (filter?.IsMatch(tag) is false)
+                    if (!string.IsNullOrEmpty(member.operationId))
+                    {
+                        if (filter?.IsMatch(member.operationId) is false)
+                        {
+                            continue;
+                        }
+                    }
+                    else if (filter?.IsMatch(apiPath) is false)
                     {
                         continue;
                     }
 
-                    string safeTag = tag.AsSafeClientName();
-
+                    string safeTag = (member.summary ?? member.operationId ?? apiPath).AsSafeClientName();
+                    
                     if (clients.TryGetValue(safeTag, out var list))
                     {
                         list.Add((item.Key, member));
@@ -63,6 +71,30 @@ internal sealed class SwaggerPaths : Dictionary<string, SwaggerPath>
                         [
                             (item.Key, member)
                         ];
+                    }
+                }
+                else
+                {
+                    foreach (string tag in member.tags)
+                    {
+                        if (filter?.IsMatch(tag) is false)
+                        {
+                            continue;
+                        }
+
+                        string safeTag = tag.AsSafeClientName();
+
+                        if (clients.TryGetValue(safeTag, out var list))
+                        {
+                            list.Add((item.Key, member));
+                        }
+                        else
+                        {
+                            clients[safeTag] =
+                            [
+                                (item.Key, member)
+                            ];
+                        }
                     }
                 }
             }

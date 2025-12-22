@@ -30,7 +30,7 @@ internal abstract class SwaggerPathBase
 
         string operation = GetType().Name["SwaggerPath".Length..];
 
-        string name = operationId ?? (operation + apiPath.AsMethodName());
+        string name = (operationId ?? (operation + apiPath)).AsMethodName();
 
         if (name.EndsWith("Async"))
         {
