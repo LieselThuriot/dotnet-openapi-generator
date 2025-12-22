@@ -26,6 +26,9 @@ public sealed class GenerateCommand : AsyncCommand<Options>
                                           .StartAsync(ctx => Generate(settings, ctx, sw, cancellationToken));
 
             AnsiConsole.WriteLine("Done in " + sw.ElapsedMilliseconds + "ms total");
+
+            ErrorContext.PrintErrors();
+
             return result;
         }
         catch (Exception e)
@@ -47,7 +50,7 @@ public sealed class GenerateCommand : AsyncCommand<Options>
 
         if (document is null)
         {
-            AnsiConsole.MarkupLine("[bold red]Could not resolve swagger document[/]");
+            ErrorContext.AddError("Could not resolve swagger document");
             return -1;
         }
 
@@ -133,8 +136,9 @@ public sealed class GenerateCommand : AsyncCommand<Options>
 
         if (result is null)
         {
-            AnsiConsole.MarkupLineInterpolated($"[bold red]Could not resolve document {documentLocation}[/]");
-            throw new ApplicationException("Error resolving document");
+            string message = $"Could not resolve document {documentLocation}";
+            ErrorContext.AddError(message);
+            throw new ApplicationException(message);
         }
 
         if (documentLocation.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) ||
@@ -147,7 +151,7 @@ public sealed class GenerateCommand : AsyncCommand<Options>
             }
             catch (Exception e)
             {
-                AnsiConsole.MarkupLine("[bold red]Assumed document was yaml but could not convert it.[/] Continuing as normal.");
+                ErrorContext.AddErrorWithMarkup($"[bold red]Assumed document '{documentLocation}' was yaml but could not convert it.[/] Continued as normal.");
 
                 if (verbose)
                 {
