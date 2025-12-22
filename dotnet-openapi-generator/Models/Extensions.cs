@@ -74,6 +74,16 @@ internal static class Extensions
         return Regexes.MultiUnderscore().Replace(value, replacement).Trim(replacement.ToCharArray());
     }
 
+    public static string AsClassNameFromSafeString(this string value)
+    {
+        string result = char.IsUpper(value[0])
+            ? value
+            : value[0..1].ToUpperInvariant() + value[1..];
+
+        // Replace underscores with PascalCase
+        return string.Concat(result.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(x => x[0..1].ToUpperInvariant() + x[1..]));
+    }
+
     public static IEnumerable<string> AsUniques(this IEnumerable<string> values)
     {
         HashSet<string> returnedValues = [];

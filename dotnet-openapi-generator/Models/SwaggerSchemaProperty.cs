@@ -16,17 +16,27 @@ internal sealed class SwaggerSchemaProperty
     public System.Text.Json.JsonElement? items { get; set; }
     public SwaggerSchemaProperties? properties { get; set; }
 
-    public string GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute)
+    public string GetBody(string name, string parentName, bool supportRequiredProperties, string? jsonPropertyNameAttribute)
     {
         StringBuilder builder = new();
 
         bool startsWithDigit = char.IsDigit(name[0]);
+        bool isClassName = StringComparer.OrdinalIgnoreCase.Equals(name, parentName);
 
-        if (startsWithDigit && jsonPropertyNameAttribute is not null)
+        if (startsWithDigit || isClassName)
         {
-            builder.Append('[')
-                   .Append(jsonPropertyNameAttribute.Replace("{name}", name))
-                   .Append(']');
+            if (!string.IsNullOrWhiteSpace(jsonPropertyNameAttribute))
+            {
+                builder.Append('[')
+                       .Append(jsonPropertyNameAttribute.Replace("{name}", name))
+                       .Append(']');
+            }
+            else
+            {
+                ErrorContext.AddError($"Property '{name}' in schema '{parentName}' conflicts with C# naming conventions but no JsonPropertyNameAttribute was provided.");
+                startsWithDigit = false;
+                isClassName = false;
+            }
         }
 
         builder.Append("public ");
@@ -45,14 +55,20 @@ internal sealed class SwaggerSchemaProperty
 
         builder.Append(' ');
 
-        if (char.IsDigit(name[0]))
+        if (startsWithDigit)
         {
             builder.Append('_');
         }
 
         builder.Append(name[0..1].ToUpperInvariant())
-               .Append(name[1..])
-               .Append(" { get; set; }");
+               .Append(name[1..]);
+
+        if (isClassName)
+        {
+            builder.Append("Property");
+        }
+
+        builder.Append(" { get; set; }");
 
         return builder.ToString().TrimEnd();
     }

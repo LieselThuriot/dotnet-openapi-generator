@@ -15,13 +15,13 @@ internal sealed class SwaggerSchemaProperties : Dictionary<string, SwaggerSchema
         }
     }
 
-    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas, string? exclusion)
+    public string GetBody(string parentName, SwaggerAllOfs? allOf, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas, string? exclusion)
     {
         StringBuilder builder = new();
 
         foreach (var (Key, Value) in Iterate(exclusion))
         {
-            builder.Append('\t').AppendLine(Value.GetBody(Key, supportRequiredProperties, jsonPropertyNameAttribute));
+            builder.Append('\t').AppendLine(Value.GetBody(Key, parentName, supportRequiredProperties, jsonPropertyNameAttribute));
         }
 
         builder.AppendLine()
@@ -44,6 +44,12 @@ internal sealed class SwaggerSchemaProperties : Dictionary<string, SwaggerSchema
                        .Append("\", ");
 
                 string propertyName = item[0..1].ToUpperInvariant() + item[1..];
+
+                if (StringComparer.OrdinalIgnoreCase.Equals(propertyName, parentName))
+                {
+                    propertyName += "Property";
+                }
+
                 if (char.IsDigit(item[0]))
                 {
                     propertyName = '_' + propertyName;

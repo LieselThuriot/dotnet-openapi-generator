@@ -29,10 +29,14 @@ internal abstract class SwaggerPathBase
         apiPath = apiPath.TrimStart('/');
 
         string operation = GetType().Name["SwaggerPath".Length..];
+        string name = (operationId ?? apiPath).AsMethodName();
 
-        string name = (operationId ?? (operation + apiPath)).AsMethodName();
+        if (!name.StartsWith(operation, StringComparison.OrdinalIgnoreCase))
+        {
+            name = operation + name;
+        }
 
-        if (name.EndsWith("Async"))
+        if (name.EndsWith("Async", StringComparison.OrdinalIgnoreCase))
         {
             name = name[0..^5];
         }

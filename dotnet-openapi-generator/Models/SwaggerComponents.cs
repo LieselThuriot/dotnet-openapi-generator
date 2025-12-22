@@ -17,9 +17,14 @@ internal sealed class SwaggerComponents
         {
             string apiPath = pathKey.Trim('/').AsSafeString();
 
-            foreach (SwaggerPathBase operation in pathValue.IterateMembers().Where(x => x.responses is not null))
+            var members = pathValue.IterateMembers().Where(x => x.responses is not null).ToList();
+            foreach (SwaggerPathBase operation in members)
             {
-                string name = operation.GetType().Name["SwaggerPath".Length..] + (operation.operationId?.AsSafeString() ?? apiPath);
+                string name = operation.operationId?.AsSafeString() ?? apiPath;
+                if (members.Count > 1)
+                {
+                    name = operation.GetType().Name["SwaggerPath".Length..] + name;
+                }
 
                 var responses = operation.responses!.Where(x => x.Value.content is not null).ToList();
 
@@ -31,6 +36,8 @@ internal sealed class SwaggerComponents
                     {
                         schemaName += typeKey;
                     }
+
+                    schemaName = schemaName.AsClassNameFromSafeString();
 
                     foreach (SwaggerSchemaProperty schema in typeValue.content!.ResolveSchemas())
                     {

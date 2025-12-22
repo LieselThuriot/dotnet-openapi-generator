@@ -87,6 +87,11 @@ internal sealed class SwaggerSchema
             string assignee = x.key[0..1].ToUpperInvariant() + x.key[1..];
             string assignment = x.key.AsSafeVariableName();
 
+            if (StringComparer.OrdinalIgnoreCase.Equals(assignee, name))
+            {
+                assignee += "Property";
+            }
+
             if (char.IsDigit(assignee[0]))
             {
                 assignee = "_" + assignee;
@@ -156,7 +161,7 @@ internal sealed class SwaggerSchema
 
     public string? GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas, string modifier)
     {
-        return @enum?.GetBody(name, flaggedEnum, enumNames, modifier) ?? properties?.GetBody(allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
+        return @enum?.GetBody(name, flaggedEnum, enumNames, modifier) ?? properties?.GetBody(name, allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
     }
 
     public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool supportRequiredProperties, SwaggerComponentSchemas schemas, CancellationToken token)
