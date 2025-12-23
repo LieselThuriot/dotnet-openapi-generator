@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Xml.Linq;
 
 namespace dotnet.openapi.generator;
 
@@ -43,7 +44,7 @@ internal sealed class SwaggerSchemaProperties : Dictionary<string, SwaggerSchema
                        .Append(item)
                        .Append("\", ");
 
-                string propertyName = item[0..1].ToUpperInvariant() + item[1..];
+                string propertyName = (item[0..1].ToUpperInvariant() + item[1..]).AsSafeCSharpName("@", "_").Replace("-", "_");
 
                 if (StringComparer.OrdinalIgnoreCase.Equals(propertyName, parentName))
                 {

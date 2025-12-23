@@ -84,7 +84,7 @@ internal sealed class SwaggerSchema
         var parameters = baseProperties.Union(requiredProperties).Select(x => x.value.ResolveType() + " " + x.key.AsSafeVariableName());
         var assignements = requiredProperties.Select(x =>
         {
-            string assignee = x.key[0..1].ToUpperInvariant() + x.key[1..];
+            string assignee = (x.key[0..1].ToUpperInvariant() + x.key[1..]).AsSafeCSharpName("@", "_").Replace("-", "_");
             string assignment = x.key.AsSafeVariableName();
 
             if (StringComparer.OrdinalIgnoreCase.Equals(assignee, name))

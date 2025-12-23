@@ -98,7 +98,7 @@ internal sealed class SwaggerDocument
                 continue;
             }
 
-            if (filter?.IsMatch(key) == false)
+            if (filter?.IsMatch(key.TrimStart('/')) == false)
             {
                 continue;
             }

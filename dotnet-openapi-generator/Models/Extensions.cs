@@ -15,7 +15,7 @@ internal static class Extensions
             ? value
             : value[0..1].ToLowerInvariant() + value[1..];
 
-        return result.AsSafeCSharpName(keywordPrefix, numberPrefix);
+        return result.AsSafeCSharpName(keywordPrefix, numberPrefix).Replace("-", "_");
     }
 
     public static string AsSafeClientName(this string value, string prefix = "_")
@@ -177,7 +177,7 @@ internal static class Extensions
         return "object";
     }
 
-    private static readonly IEnumerable<string> s_keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly IEnumerable<string> s_keywords = new HashSet<string>(StringComparer.Ordinal)
     {
         "abstract",
         "as",

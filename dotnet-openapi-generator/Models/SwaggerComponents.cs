@@ -1,4 +1,6 @@
 ﻿using Spectre.Console;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace dotnet.openapi.generator;
 
@@ -41,6 +43,8 @@ internal sealed class SwaggerComponents
 
                     foreach (SwaggerSchemaProperty schema in typeValue.content!.ResolveSchemas())
                     {
+                        Traverse(schemaName, schema);
+
                         schema.format = "#/components/schemas/" + schemaName;
                         schemas[schemaName] = new()
                         {
@@ -49,6 +53,44 @@ internal sealed class SwaggerComponents
                     }
                 }
             }
+        }
+    }
+
+    private void Traverse(string schemaName, SwaggerSchemaProperty schema)
+    {
+        if (schema.properties is null)
+        {
+            return;
+        }
+
+        foreach ((string propKey, SwaggerSchemaProperty propValue) in schema.properties)
+        {
+            string innerSchema = schemaName + propKey.AsClassNameFromSafeString();
+
+            if (propValue.type is "array" && propValue.items.HasValue)
+            {
+                string genericType = innerSchema + "Item";
+                var swaggerSchema = propValue.items.GetValueOrDefault().Deserialize<SwaggerSchema>();
+
+                if (swaggerSchema is not null)
+                {
+                    schemas[genericType] = swaggerSchema;
+
+                    var node = JsonNode.Parse(propValue.items.GetValueOrDefault().ToString())!;
+                    node["type"] = "#/components/schemas/" + genericType;
+                    propValue.items = JsonSerializer.Deserialize<JsonElement>(node.ToJsonString());
+                }
+            }
+            else if (propValue.type is "object" && propValue.properties is not null)
+            {
+                propValue.format = "#/components/schemas/" + innerSchema;
+                schemas[innerSchema] = new()
+                {
+                    properties = propValue.properties
+                };
+            }
+
+            Traverse(innerSchema, propValue);
         }
     }
 

@@ -66,16 +66,12 @@ internal sealed class SwaggerPaths : Dictionary<string, SwaggerPath>
             {
                 if (member.tags is null)
                 {
-                    if (!string.IsNullOrEmpty(member.operationId))
+                    if (filter is not null)
                     {
-                        if (filter?.IsMatch(member.operationId) is false)
+                        if (!filter.IsMatch(apiPath))
                         {
                             continue;
                         }
-                    }
-                    else if (filter?.IsMatch(apiPath) is false)
-                    {
-                        continue;
                     }
 
                     string safeTag = safeApiTag ?? (member.summary ?? member.operationId)?.AsSafeClientName() ?? "Default";

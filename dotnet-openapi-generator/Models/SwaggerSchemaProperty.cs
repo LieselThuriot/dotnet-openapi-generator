@@ -22,14 +22,22 @@ internal sealed class SwaggerSchemaProperty
 
         bool startsWithDigit = char.IsDigit(name[0]);
         bool isClassName = StringComparer.OrdinalIgnoreCase.Equals(name, parentName);
+        string safeName = name.AsSafeCSharpName("@", "_").Replace("-", "_");
+        bool isInvalidName = !StringComparer.OrdinalIgnoreCase.Equals(safeName, name);
 
-        if (startsWithDigit || isClassName)
+        if (startsWithDigit || isClassName || isInvalidName)
         {
             if (!string.IsNullOrWhiteSpace(jsonPropertyNameAttribute))
             {
                 builder.Append('[')
                        .Append(jsonPropertyNameAttribute.Replace("{name}", name))
                        .Append(']');
+
+                if (isInvalidName)
+                {
+                    name = safeName;
+                    isClassName = false;
+                }
             }
             else
             {
