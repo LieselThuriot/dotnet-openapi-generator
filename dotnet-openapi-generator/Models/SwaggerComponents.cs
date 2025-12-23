@@ -58,39 +58,57 @@ internal sealed class SwaggerComponents
 
     private void Traverse(string schemaName, SwaggerSchemaProperty schema)
     {
-        if (schema.properties is null)
+        if (schema.properties is not null)
         {
-            return;
-        }
-
-        foreach ((string propKey, SwaggerSchemaProperty propValue) in schema.properties)
-        {
-            string innerSchema = schemaName + propKey.AsClassNameFromSafeString();
-
-            if (propValue.type is "array" && propValue.items.HasValue)
+            foreach ((string propKey, SwaggerSchemaProperty propValue) in schema.properties)
             {
-                string genericType = innerSchema + "Item";
-                var swaggerSchema = propValue.items.GetValueOrDefault().Deserialize<SwaggerSchema>();
+                string innerSchema = schemaName + propKey.AsClassNameFromSafeString();
 
-                if (swaggerSchema is not null)
+                if (propValue.type is "array" && propValue.items.HasValue)
                 {
-                    schemas[genericType] = swaggerSchema;
+                    string genericType = innerSchema + "ListItem";
+                    var swaggerSchema = propValue.items.GetValueOrDefault().Deserialize<SwaggerSchema>();
 
-                    var node = JsonNode.Parse(propValue.items.GetValueOrDefault().ToString())!;
-                    node["type"] = "#/components/schemas/" + genericType;
-                    propValue.items = JsonSerializer.Deserialize<JsonElement>(node.ToJsonString());
+                    if (swaggerSchema is not null)
+                    {
+                        schemas[genericType] = swaggerSchema;
+
+                        var node = JsonNode.Parse(propValue.items.GetValueOrDefault().ToString())!;
+                        node["type"] = "#/components/schemas/" + genericType;
+                        propValue.items = JsonSerializer.Deserialize<JsonElement>(node.ToJsonString());
+                    }
+                }
+                else if (propValue.type is "object" && propValue.properties is not null)
+                {
+                    propValue.format = "#/components/schemas/" + innerSchema;
+                    schemas[innerSchema] = new()
+                    {
+                        properties = propValue.properties
+                    };
+                }
+
+                Traverse(innerSchema, propValue);
+            }
+        }
+        else if (schema.type is "array" && schema.items.HasValue && schema.format is null)
+        {
+            var swaggerSchema = schema.items.GetValueOrDefault().Deserialize<SwaggerSchema>();
+
+            if (swaggerSchema is not null && swaggerSchema.properties is not null)
+            {
+                string genericType = schemaName + "ListItem";
+
+                schemas[genericType] = swaggerSchema;
+
+                var node = JsonNode.Parse(schema.items.GetValueOrDefault().ToString())!;
+                node["type"] = "#/components/schemas/" + genericType;
+                schema.items = JsonSerializer.Deserialize<JsonElement>(node.ToJsonString());
+
+                foreach ((string propKey, SwaggerSchemaProperty propValue) in swaggerSchema.properties)
+                {
+                    Traverse(genericType + propKey.AsClassNameFromSafeString(), propValue);
                 }
             }
-            else if (propValue.type is "object" && propValue.properties is not null)
-            {
-                propValue.format = "#/components/schemas/" + innerSchema;
-                schemas[innerSchema] = new()
-                {
-                    properties = propValue.properties
-                };
-            }
-
-            Traverse(innerSchema, propValue);
         }
     }
 
@@ -180,7 +198,7 @@ namespace {{@namespace}}.Models;
 [System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 internal interface __ICanIterate
 {
-    System.Collections.Generic.IEnumerable<(string name, object? value)> IterateProperties();
+    public System.Collections.Generic.IEnumerable<(string name, object? value)> IterateProperties();
 }
 """, token);
     }

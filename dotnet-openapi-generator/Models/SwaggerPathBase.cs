@@ -70,7 +70,7 @@ internal abstract class SwaggerPathBase
         string queryContent = "";
         if (queryParams.Count > 0)
         {
-            queryContent += "__QueryBuilder __my_queryBuilder = new();" + Environment.NewLine + string.Concat(queryParams.Select(x => $"        __my_queryBuilder.AddParameter({GenerateParameterSyntax(x)}, \"{x.name.TrimStart('@')}\");" + Environment.NewLine)) + Environment.NewLine + "        ";
+            queryContent += "__QueryBuilder __my_queryBuilder = new __QueryBuilder();" + Environment.NewLine + string.Concat(queryParams.Select(x => $"        __my_queryBuilder.AddParameter({GenerateParameterSyntax(x)}, \"{x.name.TrimStart('@')}\");" + Environment.NewLine)) + Environment.NewLine + "        ";
             apiPath += "{__my_queryBuilder.ToString()}";
 
             string GenerateParameterSyntax(SwaggerPathParameter x)

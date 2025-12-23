@@ -550,7 +550,7 @@ namespace {@namespace}.Clients;
     {
         if (!string.IsNullOrEmpty(value))
         {
-            _ = _builder!.Append('&').Append(valueExpression).Append('=').Append(value);
+            _ = _builder.Append('&').Append(valueExpression).Append('=').Append(value);
         }
     }
 
@@ -656,21 +656,24 @@ internal readonly ref struct __QueryBuilder
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class __StringBuilderPool
 {{
-    private static readonly System.Collections.Concurrent.ConcurrentQueue<System.Text.StringBuilder> s_pool = new();
+    private static readonly System.Collections.Concurrent.ConcurrentBag<System.Text.StringBuilder> s_pool;
     static __StringBuilderPool()
     {{
-        s_pool.Enqueue(new());
-        s_pool.Enqueue(new());
-        s_pool.Enqueue(new());
-        s_pool.Enqueue(new());
-        s_pool.Enqueue(new());
+        s_pool = new System.Collections.Concurrent.ConcurrentBag<System.Text.StringBuilder>(new[]
+        {{
+            new System.Text.StringBuilder(),
+            new System.Text.StringBuilder(),
+            new System.Text.StringBuilder(),
+            new System.Text.StringBuilder(),
+            new System.Text.StringBuilder()
+        }});
     }}
 
     public static System.Text.StringBuilder Acquire()
     {{
-        if (!s_pool.TryDequeue(out var builder))
+        if (!s_pool.TryTake(out System.Text.StringBuilder? builder))
         {{
-            builder = new();
+            builder = new System.Text.StringBuilder();
         }}
 
         return builder;
@@ -682,7 +685,7 @@ internal static class __StringBuilderPool
         {{
             //Possible small but insignificant race condition
             builder.Clear();
-            s_pool.Enqueue(builder);
+            s_pool.Add(builder);
         }}
     }}
 }}", token);
@@ -733,7 +736,7 @@ internal static class __StringBuilderPool
     private static readonly System.Text.Json.JsonSerializerOptions s_defaultOptions;
     static ClientOptions()
     {{
-        s_defaultOptions = new(System.Text.Json.JsonSerializerDefaults.Web);
+        s_defaultOptions = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
 
         s_defaultOptions.PropertyNameCaseInsensitive = true;
         s_defaultOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
