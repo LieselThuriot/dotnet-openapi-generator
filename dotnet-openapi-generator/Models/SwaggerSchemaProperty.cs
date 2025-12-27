@@ -16,6 +16,9 @@ internal sealed class SwaggerSchemaProperty
     public System.Text.Json.JsonElement? items { get; set; }
     public SwaggerSchemaProperties? properties { get; set; }
 
+    [System.Text.Json.Serialization.JsonPropertyName("enum")]
+    public SwaggerSchemaEnum? @enum { get; set; }
+
     public string GetBody(string name, string parentName, bool supportRequiredProperties, string? jsonPropertyNameAttribute)
     {
         StringBuilder builder = new();

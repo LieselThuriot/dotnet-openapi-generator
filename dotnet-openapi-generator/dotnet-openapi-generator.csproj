@@ -8,6 +8,7 @@
 		<RootNamespace>dotnet.openapi.generator</RootNamespace>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 		<openapi-generator-version>$(TargetFrameworkVersion)</openapi-generator-version>
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	</PropertyGroup>
 
   <!--Testing-->

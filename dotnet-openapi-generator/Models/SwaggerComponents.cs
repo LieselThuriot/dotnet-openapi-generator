@@ -52,6 +52,22 @@ internal sealed class SwaggerComponents
                         };
                     }
                 }
+
+                if (operation.parameters is not null)
+                {
+                    foreach (var parameter in operation.parameters)
+                    {
+                        if (parameter.schema.@enum is not null)
+                        {
+                            string schemaName = (name + "_" + parameter.name + "Enum").AsClassNameFromSafeString();
+                            parameter.schema.format = "#/components/schemas/" + schemaName;
+                            schemas[schemaName] = new()
+                            {
+                                @enum = parameter.schema.@enum
+                            };
+                        }
+                    }
+                }
             }
         }
     }
