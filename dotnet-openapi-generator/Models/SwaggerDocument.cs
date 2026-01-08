@@ -1,6 +1,7 @@
 ﻿using dotnet.openapi.generator.Cli;
 using Spectre.Console;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace dotnet.openapi.generator;
 
@@ -118,13 +119,19 @@ internal sealed class SwaggerDocument
         string? additionalTags = info?.GetProjectTags();
         string additionalIncludes = "";
 
+        if (options.OAuthType is not OAuthType.TokenExchange and not OAuthType.CachedTokenExchange)
+        {
+            additionalIncludes = $"<PackageReference Include=\"Microsoft.Extensions.Http\" Version=\"[{netVersion.Major}.*,)\" />";
+        }
+#if !NET10_0_OR_GREATER
+        else
+        {
+            additionalIncludes = $"<PackageReference Include=\"Microsoft.Extensions.Http\" Version=\"[{netVersion.Major}.*,)\" />";
+        }
+#endif
+
         if (options.OAuthType is not OAuthType.None)
         {
-            additionalIncludes += """
-
-    <PackageReference Include="IdentityModel" Version="[7.*,)" />
-""";
-
             if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
             {
                 additionalIncludes += $"""
@@ -145,6 +152,8 @@ internal sealed class SwaggerDocument
                 additionalIncludes += @"
     <PackageReference Include=""Microsoft.AspNetCore.Http"" Version=""[2.*,)"" />";
 #endif
+
+#if !NET10_0_OR_GREATER
                 if (options.OAuthType is OAuthType.CachedTokenExchange)
                 {
                     additionalIncludes += $"""
@@ -152,6 +161,7 @@ internal sealed class SwaggerDocument
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="[{netVersion.Major}.*,)" />
 """;
                 }
+#endif
             }
         }
 #if !GENERATING_NETSTANDARD
@@ -175,7 +185,7 @@ internal sealed class SwaggerDocument
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Http" Version="[{netVersion.Major}.*,)" />{additionalIncludes}
+    {additionalIncludes}
   </ItemGroup>
 
 </Project>
@@ -242,14 +252,50 @@ namespace {{options.Namespace}}.Clients;{{additionalHelpers}}
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal sealed class __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryCache
 {
-    private readonly IdentityModel.Client.DiscoveryCache _cache;
+    private readonly string _authorityUrl;
+    private readonly System.Net.Http.IHttpClientFactory _factory;
+    private readonly System.Threading.SemaphoreSlim _lock = new(1,1);
+
+    private __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryDocumentResponse? _discoveryDocumentResponse;
 
     public __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryCache(string authorityUrl, System.Net.Http.IHttpClientFactory factory)
     {
-        _cache  = new(authorityUrl, () => factory.CreateClient(Registrations.__ClientNames.DiscoveryCache));
+        _authorityUrl = authorityUrl ?? throw new System.ArgumentNullException(nameof(authorityUrl));
+        _factory = factory;
     }
 
-    public System.Threading.Tasks.Task<IdentityModel.Client.DiscoveryDocumentResponse> GetAsync() => _cache.GetAsync();
+    public async System.Threading.Tasks.Task<__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryDocumentResponse> GetAsync()
+    {
+        if (_discoveryDocumentResponse is not null)
+        {
+            return _discoveryDocumentResponse;
+        }
+
+        await _lock.WaitAsync();
+        try
+        {
+            if (_discoveryDocumentResponse is not null)
+            {
+                return _discoveryDocumentResponse;
+            }
+
+            var client = _factory.CreateClient(Registrations.__ClientNames.DiscoveryCache);
+            var res = await client.GetAsync(new System.Uri(new System.Uri(_authorityUrl), ".well-known/openid-configuration"));
+
+            res.EnsureSuccessStatusCode();
+
+            var json = await res.Content.ReadAsStringAsync();
+
+            // TODO : Avoid going with STJ specifically
+            _discoveryDocumentResponse = System.Text.Json.JsonSerializer.Deserialize<__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryDocumentResponse>(json);
+
+            return _discoveryDocumentResponse ?? throw new System.Exception("Could not resolve discovery document");
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
 }
 
 [System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
@@ -280,14 +326,14 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         {{GenerateGetTokenBodyBasedOnType(options)}}
     }
 
-    private System.Exception CouldNotGetToken(IdentityModel.Client.TokenResponse response)
+    private System.Exception CouldNotGetToken(__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}TokenResponse? response)
     {
-        if (response.ErrorType is IdentityModel.Client.ResponseErrorType.Exception)
+        if (response is null)
         {
-            return response.Exception ?? new(response.Error ?? "Unknown Error");
+            return new System.Exception("Token request failed");
         }
 
-        return new System.Exception("Could not request token");
+        return new System.Exception(response.ErrorDescription ?? response.Error ?? "Could not request token");
     }
 }
 
@@ -329,7 +375,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         Creation = System.DateTime.UtcNow;
     }
 
-    public static implicit operator ApiAccessToken(IdentityModel.Client.TokenResponse response) => new(response.AccessToken!, response.TokenType!, response.ExpiresIn);
+    public static implicit operator ApiAccessToken(__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}TokenResponse response) => new(response.AccessToken!, response.TokenType!, response.ExpiresIn.GetValueOrDefault());
     public static implicit operator System.Net.Http.Headers.AuthenticationHeaderValue(ApiAccessToken token) => new(token.TokenType, token.AccessToken);
 
     public string AccessToken { get; }
@@ -339,6 +385,24 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
     public bool IsValid() => (Creation + GetExpiration()) > System.DateTime.UtcNow;
     public System.TimeSpan GetExpiration() => System.TimeSpan.FromSeconds(ExpiresIn) - System.TimeSpan.FromMinutes(1);
+}
+
+[System.CodeDom.Compiler.GeneratedCode("dotnet -openapi-generator", "{{Constants.ProductVersion}}")]
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+{{modifierValue}} sealed class __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryDocumentResponse
+{
+    {{(options.JsonPropertyNameAttribute is not null ? "[" + options.JsonPropertyNameAttribute?.Replace("{name}", "token_endpoint") + "]" : "")}}public Uri? TokenEndpoint { get; set; }
+}
+
+[System.CodeDom.Compiler.GeneratedCode("dotnet -openapi-generator", "{{Constants.ProductVersion}}")]
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+{{modifierValue}} sealed class __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}TokenResponse
+{
+    {{(options.JsonPropertyNameAttribute is not null ? "[" + options.JsonPropertyNameAttribute?.Replace("{name}", "access_token") + "]" : "")}}public string? AccessToken { get; set; }
+    {{(options.JsonPropertyNameAttribute is not null ? "[" + options.JsonPropertyNameAttribute?.Replace("{name}", "token_type") + "]" : "")}}public string? TokenType { get; set; }
+    {{(options.JsonPropertyNameAttribute is not null ? "[" + options.JsonPropertyNameAttribute?.Replace("{name}", "expires_in") + "]" : "")}}public int? ExpiresIn { get; set; }
+    public string? Error { get; set; }
+    {{(options.JsonPropertyNameAttribute is not null ? "[" + options.JsonPropertyNameAttribute?.Replace("{name}", "error_description") + "]" : "")}}public string? ErrorDescription { get; set; }
 }
 """, cancellationToken: token);
 
@@ -385,6 +449,23 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         var discoveryDocumentResponse = await _discoveryCache.GetAsync();
 
         var options = _tokenOptions;
+
+        var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, discoveryDocumentResponse.TokenEndpoint!);
+
+        var form = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string,string>>();
+
+        form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""grant_type"", ""client_credentials""));
+        form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""client_id"", ""ClientId""));
+
+        if (!string.IsNullOrWhiteSpace(options.ClientSecret))
+        {{
+            form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""client_secret"", options.ClientSecret));
+        }}
+
+        if (!string.IsNullOrWhiteSpace(options.Scopes))
+        {{
+            form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""scope"", options.Scopes));
+        }}
 ";
 
             if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
@@ -405,37 +486,32 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
         string signedClientAuthenticationToken = handler.WriteToken(secToken);
 
-        var parameters = new IdentityModel.Client.Parameters(
-        [
-            System.Collections.Generic.KeyValuePair.Create(""client_assertion_type"", ""urn:ietf:params:oauth:client-assertion-type:jwt-bearer""),
-            System.Collections.Generic.KeyValuePair.Create(""client_assertion"", signedClientAuthenticationToken),
-        ]);
+        form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""client_assertion_type"", ""urn:ietf:params:oauth:client-assertion-type:jwt-bearer""));
+        form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""client_assertion"", signedClientAuthenticationToken));
 ";
             }
 
             result += $@"
-        var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient), new IdentityModel.Client.TokenClientOptions
+        request.Content = new System.Net.Http.FormUrlEncodedContent(form);
+
+        var client = _httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient);
+
+        var responseMsg = await client.SendAsync(request, cancellationToken);
+
+        if (!responseMsg.IsSuccessStatusCode)
         {{
-            ClientId = options.ClientId,
-            ClientSecret = options.ClientSecret,
-            Address = discoveryDocumentResponse.TokenEndpoint!,
-            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{options.ClientCredentialStyle}";
+            throw CouldNotGetToken(null);
+        }}
 
-            if (options.OAuthType is OAuthType.ClientCredentialsWithCertificate)
-            {
-                result += @",
-            Parameters = parameters";
-            }
+        var content = await responseMsg.Content.ReadAsStringAsync(cancellationToken);
 
-            result += @"
-        });
+        // TODO : Avoid going with STJ specifically
+        var response = System.Text.Json.JsonSerializer.Deserialize<__{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}TokenResponse>(content);
 
-        var response = await tokenClient.RequestClientCredentialsTokenAsync(options.Scopes, cancellationToken: cancellationToken);
-
-        if (response.ErrorType is not IdentityModel.Client.ResponseErrorType.None)
-        {
+        if (response is null || !string.IsNullOrEmpty(response.Error))
+        {{
             throw CouldNotGetToken(response);
-        }
+        }}
 
         return response;";
 
@@ -460,23 +536,37 @@ string? currentToken = GetAccessToken();
     {
         var discoveryDocumentResponse = await _discoveryCache.GetAsync();
 
-        var tokenClient = new IdentityModel.Client.TokenClient(_httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient), new IdentityModel.Client.TokenClientOptions
+        var client = _httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient);
+        var parameters = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, string>>()
         {
-            Address = discoveryDocumentResponse.TokenEndpoint!,
-            ClientId = _tokenOptions.ClientId,
-            ClientSecret = _tokenOptions.ClientSecret,
-            ClientCredentialStyle = IdentityModel.Client.ClientCredentialStyle.{{options.ClientCredentialStyle}},
-            Parameters = new()
-            {
-                { IdentityModel.OidcConstants.TokenRequest.SubjectTokenType, IdentityModel.OidcConstants.TokenTypeIdentifiers.AccessToken },
-                { IdentityModel.OidcConstants.TokenRequest.SubjectToken, currentToken },
-                { IdentityModel.OidcConstants.TokenRequest.Scope, _tokenOptions.Scopes }
-            }
-        });
+            new System.Collections.Generic.KeyValuePair<string, string>("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange"),
+            new System.Collections.Generic.KeyValuePair<string, string>("subject_token_type", "urn:ietf:params:oauth:token-type:access_token"),
+            new System.Collections.Generic.KeyValuePair<string, string>("subject_token", currentToken),
+        };
 
-        var response = await tokenClient.RequestTokenAsync(IdentityModel.OidcConstants.GrantTypes.TokenExchange, cancellationToken: cancellationToken);
+        if (!string.IsNullOrEmpty(_tokenOptions.Scopes))
+        {
+            parameters.Add(new("scope", _tokenOptions.Scopes));
+        }
 
-        if (response.ErrorType is not IdentityModel.Client.ResponseErrorType.None)
+        var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, discoveryDocumentResponse.TokenEndpoint)
+        {
+            Content = new System.Net.Http.FormUrlEncodedContent(parameters)
+        };
+
+        var httpResponse = await client.SendAsync(request, cancellationToken);
+    
+        if (!httpResponse.IsSuccessStatusCode)
+        {
+            throw CouldNotGetToken(null);
+        }
+
+        var content = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+
+        // TODO : Avoid going with STJ specifically
+        var response = System.Text.Json.JsonSerializer.Deserialize<__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}TokenResponse>(content);
+
+        if (response is null || !string.IsNullOrEmpty(response.Error))
         {
             throw CouldNotGetToken(response);
         }

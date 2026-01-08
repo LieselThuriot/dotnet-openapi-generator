@@ -89,11 +89,6 @@ public sealed class Options : CommandSettings
     [DefaultValue(OAuthType.None)]
     public OAuthType OAuthType { get; set; }
 
-    [CommandOption("--oauth-client-credential-style")]
-    [Description("When including an OAuth Client, we can either pass values in the body or as a basic auth header. Can be PostBody or AuthorizationHeader")]
-    [DefaultValue(ClientCredentialStyle.PostBody)]
-    public ClientCredentialStyle ClientCredentialStyle { get; set; }
-
     [CommandOption("-i|--interfaces")]
     [Description("Generate interfaces for the clients")]
     [DefaultValue(false)]
