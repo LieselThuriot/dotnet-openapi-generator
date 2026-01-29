@@ -256,6 +256,7 @@ internal sealed class __{{options.Namespace.AsSafeString(replaceDots: true, repl
     private readonly System.Net.Http.IHttpClientFactory _factory;
     private readonly System.Threading.SemaphoreSlim _lock = new(1,1);
 
+    private System.DateTime _retrievedAt = System.DateTime.MinValue;
     private __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryDocumentResponse? _discoveryDocumentResponse;
 
     public __{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryCache(string authorityUrl, System.Net.Http.IHttpClientFactory factory)
@@ -264,9 +265,9 @@ internal sealed class __{{options.Namespace.AsSafeString(replaceDots: true, repl
         _factory = factory;
     }
 
-    public async System.Threading.Tasks.Task<__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryDocumentResponse> GetAsync()
+    public async System.Threading.Tasks.Task<__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryDocumentResponse> GetAsync(System.Threading.CancellationToken cancellationToken)
     {
-        if (_discoveryDocumentResponse is not null)
+        if (_discoveryDocumentResponse is not null && _retrievedAt > DateTime.UtcNow.AddDays(-1))
         {
             return _discoveryDocumentResponse;
         }
@@ -274,20 +275,21 @@ internal sealed class __{{options.Namespace.AsSafeString(replaceDots: true, repl
         await _lock.WaitAsync();
         try
         {
-            if (_discoveryDocumentResponse is not null)
+            if (_discoveryDocumentResponse is not null && _retrievedAt > DateTime.UtcNow.AddDays(-1))
             {
                 return _discoveryDocumentResponse;
             }
 
             var client = _factory.CreateClient(Registrations.__ClientNames.DiscoveryCache);
-            var res = await client.GetAsync(new System.Uri(new System.Uri(_authorityUrl), ".well-known/openid-configuration"));
+            var res = await client.GetAsync(new System.Uri(new System.Uri(_authorityUrl), ".well-known/openid-configuration"), cancellationToken);
 
             res.EnsureSuccessStatusCode();
 
-            var json = await res.Content.ReadAsStringAsync();
+            string json = await res.Content.ReadAsStringAsync(cancellationToken);
 
             // TODO : Avoid going with STJ specifically
             _discoveryDocumentResponse = System.Text.Json.JsonSerializer.Deserialize<__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}DiscoveryDocumentResponse>(json);
+            _retrievedAt = System.DateTime.UtcNow;
 
             return _discoveryDocumentResponse ?? throw new System.Exception("Could not resolve discovery document");
         }
@@ -326,7 +328,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
         {{GenerateGetTokenBodyBasedOnType(options)}}
     }
 
-    private System.Exception CouldNotGetToken(__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}TokenResponse? response)
+    private static System.Exception CouldNotGetToken(__{{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}}TokenResponse? response)
     {
         if (response is null)
         {
@@ -427,7 +429,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
     {{
         try
         {{
-            await _readLock.WaitAsync();
+            await _readLock.WaitAsync(cancellationToken);
 
             // Check again, access token might already be refreshed.
             var currentAccessToken = _accessToken;
@@ -436,7 +438,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
                 return currentAccessToken;
             }}
 
-            return (_accessToken = await GetNewTokenAsync(cancellationToken));
+            return _accessToken = await GetNewTokenAsync(cancellationToken);
         }}
         finally
         {{
@@ -446,25 +448,26 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
     private async System.Threading.Tasks.Task<ApiAccessToken> GetNewTokenAsync(System.Threading.CancellationToken cancellationToken)
     {{
-        var discoveryDocumentResponse = await _discoveryCache.GetAsync();
+        var discoveryDocumentResponse = await _discoveryCache.GetAsync(cancellationToken);
 
         var options = _tokenOptions;
 
         var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, discoveryDocumentResponse.TokenEndpoint!);
 
-        var form = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string,string>>();
-
-        form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""grant_type"", ""client_credentials""));
-        form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""client_id"", ""ClientId""));
+        var form = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string,string>>(4)
+        {{
+            System.Collections.Generic.KeyValuePair.Create(""grant_type"", ""client_credentials""),
+            System.Collections.Generic.KeyValuePair.Create(""client_id"", ""ClientId"")
+        }};
 
         if (!string.IsNullOrWhiteSpace(options.ClientSecret))
         {{
-            form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""client_secret"", options.ClientSecret));
+            form.Add(System.Collections.Generic.KeyValuePair.Create(""client_secret"", options.ClientSecret));
         }}
 
         if (!string.IsNullOrWhiteSpace(options.Scopes))
         {{
-            form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""scope"", options.Scopes));
+            form.Add(System.Collections.Generic.KeyValuePair.Create(""scope"", options.Scopes));
         }}
 ";
 
@@ -486,8 +489,8 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
 
         string signedClientAuthenticationToken = handler.WriteToken(secToken);
 
-        form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""client_assertion_type"", ""urn:ietf:params:oauth:client-assertion-type:jwt-bearer""));
-        form.Add(new System.Collections.Generic.KeyValuePair<string,string>(""client_assertion"", signedClientAuthenticationToken));
+        form.Add(System.Collections.Generic.KeyValuePair.Create(""client_assertion_type"", ""urn:ietf:params:oauth:client-assertion-type:jwt-bearer""));
+        form.Add(System.Collections.Generic.KeyValuePair.Create(""client_assertion"", signedClientAuthenticationToken));
 ";
             }
 
@@ -503,7 +506,7 @@ internal sealed class __TokenRequestClient : ITokenRequestClient
             throw CouldNotGetToken(null);
         }}
 
-        var content = await responseMsg.Content.ReadAsStringAsync(cancellationToken);
+        string content = await responseMsg.Content.ReadAsStringAsync(cancellationToken);
 
         // TODO : Avoid going with STJ specifically
         var response = System.Text.Json.JsonSerializer.Deserialize<__{options.Namespace.AsSafeString(replaceDots: true, replacement: "")}TokenResponse>(content);
@@ -534,14 +537,14 @@ string? currentToken = GetAccessToken();
 
     private async System.Threading.Tasks.Task<ApiAccessToken> Exchange(string currentToken, System.Threading.CancellationToken cancellationToken)
     {
-        var discoveryDocumentResponse = await _discoveryCache.GetAsync();
+        var discoveryDocumentResponse = await _discoveryCache.GetAsync(cancellationToken);
 
         var client = _httpClientFactory.CreateClient(Registrations.__ClientNames.TokenRequestClient);
-        var parameters = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, string>>()
+        var parameters = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, string>>(4)
         {
-            new System.Collections.Generic.KeyValuePair<string, string>("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange"),
-            new System.Collections.Generic.KeyValuePair<string, string>("subject_token_type", "urn:ietf:params:oauth:token-type:access_token"),
-            new System.Collections.Generic.KeyValuePair<string, string>("subject_token", currentToken),
+            System.Collections.Generic.KeyValuePair.Create("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange"),
+            System.Collections.Generic.KeyValuePair.Create("subject_token_type", "urn:ietf:params:oauth:token-type:access_token"),
+            System.Collections.Generic.KeyValuePair.Create("subject_token", currentToken),
         };
 
         if (!string.IsNullOrEmpty(_tokenOptions.Scopes))
