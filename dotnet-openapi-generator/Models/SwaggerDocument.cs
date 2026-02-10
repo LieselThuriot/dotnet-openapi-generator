@@ -36,10 +36,7 @@ internal sealed class SwaggerDocument
         string modifierValue = options.Modifier.ToString().ToLowerInvariant();
         string clientModifierValue = options.ClientModifier?.ToString().ToLowerInvariant() ?? modifierValue;
 
-        if (components.schemas is null)
-        {
-            components.BuildSchemas(GetFilteredPaths(paths, excludeObsolete, filter));
-        }
+        components.BuildInlineSchemas(GetFilteredPaths(paths, excludeObsolete, filter));
 
         IEnumerable<string> usedComponents = await paths.Generate(ctx,
                                                                   path,

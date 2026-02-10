@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using dotnet.openapi.generator.Converters;
+using System.Text;
 
 namespace dotnet.openapi.generator;
 
@@ -6,6 +7,7 @@ internal sealed class SwaggerSchemaProperty
 {
     [System.Text.Json.Serialization.JsonPropertyName("$ref")]
     public string? @ref { get; set; }
+    [System.Text.Json.Serialization.JsonConverter(typeof(SingleOrArrayConverter<string>))]
     public string? type { get; set; }
     public string? format { get; set; }
     public object? @default { get; set; }

@@ -10,10 +10,10 @@ internal sealed class SwaggerComponents
 
     public SwaggerComponentSchemas schemas { get; set; } = default!;
 
-    public void BuildSchemas(SwaggerPaths paths)
+    public void BuildInlineSchemas(SwaggerPaths paths)
     {
-        _skipShake = true;
-        schemas = [];
+        _skipShake = schemas is null;
+        schemas ??= [];
 
         foreach ((string pathKey, SwaggerPath pathValue) in paths)
         {
@@ -60,6 +60,7 @@ internal sealed class SwaggerComponents
                         if (parameter.schema.@enum is not null)
                         {
                             string schemaName = (name + "_" + parameter.name + "Enum").AsClassNameFromSafeString();
+
                             parameter.schema.format = "#/components/schemas/" + schemaName;
                             schemas[schemaName] = new()
                             {
@@ -83,7 +84,17 @@ internal sealed class SwaggerComponents
                 if (propValue.type is "array" && propValue.items.HasValue)
                 {
                     string genericType = innerSchema + "ListItem";
-                    var swaggerSchema = propValue.items.GetValueOrDefault().Deserialize<SwaggerSchema>();
+                    SwaggerSchema? swaggerSchema;
+
+                    try
+                    {
+                        swaggerSchema = propValue.items.GetValueOrDefault().Deserialize<SwaggerSchema>();
+                    }
+                    catch (Exception ex)
+                    {
+                        ErrorContext.AddError($"Failed to deserialize schema for array items in property '{propKey}' of schema '{schemaName}': {ex.Message}");
+                        swaggerSchema = null;
+                    }
 
                     if (swaggerSchema is not null)
                     {
@@ -105,10 +116,26 @@ internal sealed class SwaggerComponents
 
                 Traverse(innerSchema, propValue);
             }
+
+            schema.format = "#/components/schemas/" + schemaName;
+            schemas[schemaName] = new()
+            {
+                properties = schema.properties
+            };
         }
         else if (schema.type is "array" && schema.items.HasValue && schema.format is null)
         {
-            var swaggerSchema = schema.items.GetValueOrDefault().Deserialize<SwaggerSchema>();
+            SwaggerSchema? swaggerSchema;
+
+            try
+            {
+                swaggerSchema = schema.items.GetValueOrDefault().Deserialize<SwaggerSchema>();
+            }
+            catch (Exception ex)
+            {
+                ErrorContext.AddError($"Failed to deserialize schema for array items in schema '{schemaName}': {ex.Message}");
+                swaggerSchema = null;
+            }
 
             if (swaggerSchema is not null && swaggerSchema.properties is not null)
             {
