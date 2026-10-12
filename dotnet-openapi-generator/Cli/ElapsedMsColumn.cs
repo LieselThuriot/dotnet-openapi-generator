@@ -26,6 +26,6 @@ internal sealed class ElapsedMsColumn : ProgressColumn
             return new Markup("-- ms");
         }
 
-        return new Text($"{elapsed.Value.TotalMilliseconds:N2} ms", Style ?? Style.Plain);
+        return new Text($"{elapsed.Value.TotalMilliseconds:N2} ms", Style);
     }
 }
