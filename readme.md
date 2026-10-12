@@ -79,6 +79,8 @@ Liesel Thuriot
 
   --stringbuilder-pool-size          (Default: 50) StringBuilder pool size for building query params. If 0, a simple string concat is used instead
 
+  --number-type                      (Default: double) The C# type used for OpenAPI number values without a float or double format
+
   --oauth-type                       (Default: None) Includes an OAuth Client. Can be ClientCredentials, ClientCredentialsWithCertificate, TokenExchange or CachedTokenExchange
 
   --oauth-client-credential-style    (Default: PostBody) When including an OAuth Client, we can either pass values in the body or as a basic auth header. Can be PostBody or AuthorizationHeader

@@ -84,6 +84,11 @@ public sealed class Options : CommandSettings
     [DefaultValue(50)]
     public int StringBuilderPoolSize { get; set; }
 
+    [CommandOption("--number-type")]
+    [Description("The C# type used for OpenAPI number values without a float or double format")]
+    [DefaultValue("double")]
+    public string NumberType { get; set; } = "double";
+
     [CommandOption("--oauth-type")]
     [Description("Includes an OAuth Client. Can be ClientCredentials, ClientCredentialsWithCertificate, TokenExchange or CachedTokenExchange")]
     [DefaultValue(OAuthType.None)]

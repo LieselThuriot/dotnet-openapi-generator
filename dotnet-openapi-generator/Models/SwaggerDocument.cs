@@ -18,6 +18,8 @@ internal sealed class SwaggerDocument
 
     public async Task Generate(ProgressContext ctx, Options options, CancellationToken token = default)
     {
+        using var typeResolutionScope = TypeResolutionContext.UseNumberType(options.NumberType);
+
         string path = options.Directory!;
         string @namespace = options.Namespace!;
         bool excludeObsolete = options.ExcludeObsolete;
