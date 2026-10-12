@@ -26,8 +26,8 @@ internal sealed class SwaggerSchemaProperty
         StringBuilder builder = new();
 
         bool startsWithDigit = char.IsDigit(name[0]);
-        bool isClassName = StringComparer.OrdinalIgnoreCase.Equals(name, parentName);
         string safeName = name.AsSafeCSharpName("@", "_").Replace("-", "_");
+        bool isClassName = StringComparer.OrdinalIgnoreCase.Equals(safeName, parentName);
         bool isInvalidName = !StringComparer.OrdinalIgnoreCase.Equals(safeName, name);
 
         if (startsWithDigit || isClassName || isInvalidName)
@@ -41,14 +41,15 @@ internal sealed class SwaggerSchemaProperty
                 if (isInvalidName)
                 {
                     name = safeName;
-                    isClassName = false;
                 }
             }
             else
             {
-                ErrorContext.AddError($"Property '{name}' in schema '{parentName}' conflicts with C# naming conventions but no JsonPropertyNameAttribute was provided.");
-                startsWithDigit = false;
-                isClassName = false;
+                if (startsWithDigit || isInvalidName)
+                {
+                    ErrorContext.AddError($"Property '{name}' in schema '{parentName}' conflicts with C# naming conventions but no JsonPropertyNameAttribute was provided.");
+                    startsWithDigit = false;
+                }
             }
         }
 
